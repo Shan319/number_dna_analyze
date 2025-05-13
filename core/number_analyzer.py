@@ -1,6 +1,17 @@
 from collections import Counter
 
-# 磁場定義 
+# 磁場定義
+
+keyword_fields = {
+    "伏位": {"蓄勢待發、狀況延續、臥虎藏龍"},
+    "生氣": {"貴人、轉機、好名聲"},
+    "天醫": {"主大才、天生聰穎、文筆好"},
+    "延年": {"意志堅定的領袖格局"},
+    "絕命": {"高IQ低EQ、大起大落的極端特質"},
+    "禍害": {"口舌、病弱、心機"},
+    "五鬼": {"最有才華但最不穩定、際遇波折"},
+    "六煞": {"情感、婚姻、或人際關係方面糾葛"},
+}
 magnetic_fields = {
     "伏位": {"strengths": "有耐心、責任心強、幽默風趣、善於溝通協調",
              "weaknesses": "矛盾交錯、沒有安全感、主觀意識強、作風保守",
@@ -43,11 +54,31 @@ input_list = input_str.split()
 
 # 初步計數 
 base_counts = Counter(input_list)
-print("\n[磁場出現次數]")
-for field, count in base_counts.items():
-    print(f"{field}：{count}")
+print("\n[磁場出現次數與關鍵字]")  # 標題更新
 
-# 進階規則處理 
+for field, count in base_counts.items():
+    keywords = "、".join(keyword_fields.get(field, []))  # 取得關鍵字集合並轉成字串
+    print(f"{field}：{count}（{keywords}）")
+
+# 額外年齡輸出（身分證字號專屬)
+if input_type == "身分證字號":
+    print("\n[歲數對應磁場]")
+    total = len(input_list)
+    age_start = 0
+    first = True
+    for idx, field in enumerate(input_list):
+        if first:
+            age_end = 10
+            first = False
+        elif idx == total - 1:
+            print(f"{age_start}~70(歲) {field}")
+            break
+        else:
+            age_end = age_start + 5
+        print(f"{age_start}~{age_end}(歲) {field}")
+        age_start = age_end
+
+# 進階規則處理
 adjusted_counts = base_counts.copy()
 adjust_log = []
 
@@ -67,7 +98,7 @@ if cancel_count > 0:
     adjust_log.append(f"(延年-{cancel_count})")
     adjust_log.append(f"(六煞-{cancel_count})")
 
-# 規則 3：固定對組合>抵一個禍害
+# 規則 3：固定對組合 -> 抵一個禍害
 group_pairs = [("天醫", "天醫"), ("天醫", "延年"), ("生氣", "伏位"), ("延年", "生氣")]
 i = 0
 used_indexes = set()
@@ -83,7 +114,7 @@ while i < len(input_list) - 1:
     else:
         i += 1
 
-# 規則 4：生氣+天醫+延年>抵五鬼
+# 規則 4：生氣+天醫+延年 -> 抵五鬼
 i = 0
 while i < len(input_list) - 2:
     triplet = input_list[i:i+3]
@@ -131,23 +162,7 @@ for k, v in adjusted_counts.items():
     if v > 0:
         print(f"{k}*{v}")
 
-# 額外年齡輸出（身分證字號專屬）
-if input_type == "身分證字號":
-    print("\n[歲數對應磁場]")
-    total = len(input_list)
-    age_start = 0
-    first = True
-    for idx, field in enumerate(input_list):
-        if first:
-            age_end = 10
-            first = False
-        elif idx == total - 1:
-            print(f"{age_start}~70(歲) {field}")
-            break
-        else:
-            age_end = age_start + 5
-        print(f"{age_start}~{age_end}(歲) {field}")
-        age_start = age_end
+
 
 # 輸出選項
 print("\n請選擇要顯示的資訊（可複選，用逗號隔開）：")
