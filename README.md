@@ -40,5 +40,5 @@
 1. 複製或下載本倉庫
 
 ```bash
-git clone https://github.com/yourusername/number-dna-analyze.git
-cd number-dna-analyze
+git clone https://github.com/Shan319/number_dna_analyze.git
+cd number_dna_analyze
