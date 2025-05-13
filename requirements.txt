@@ -1,6 +1,3 @@
-# GUI相關
-tk==8.6.12  # Tkinter，Python的標準GUI工具包
-
 # 數據處理和視覺化
 matplotlib==3.7.1  # 用於創建視覺化圖表
 numpy==1.24.3  # 用於數值計算和數組操作
