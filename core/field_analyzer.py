@@ -1,37 +1,33 @@
-
 '''
 (輸出格式暫定，只是為了方便除錯以及數字分析引擎使用)
+此為有英數混合的版本
 需先pip install cryptography與下載附檔character.txt並更改路徑名稱
-
-磁場組合對應表
 '''
 
-from cryptography.fernet import Fernet   # 需先下載cryptography >pip install cryptography  
+from cryptography.fernet import Fernet
 import os
 import re
 
-# 讀取中文筆劃檔(在個人電腦上，請參考附檔character.txt)
+# 讀取筆劃檔
 def load_stroke_dict_from_file(filename):
     stroke_dict = {}
     with open(filename, "r", encoding="cp950", errors="ignore") as f:
-        lines = f.readlines()
-
-    for line in lines:
-        # 跳過說明或空行
-        if not line.strip() or line.startswith("Column"):
-            continue
-        try:
-            parts = line.strip().split()
-            if len(parts) >= 2:
-                char = parts[0]
-                stroke = int(parts[-1])
-                stroke_dict[char] = stroke
-        except Exception as e:
-            print(f"無法解析行: {line.strip()} 錯誤: {e}")
+        for line in f:
+            if not line.strip() or line.startswith("Column"):
+                continue
+            try:
+                parts = line.strip().split()
+                if len(parts) >= 2:
+                    char = parts[0]
+                    stroke = int(parts[-1])
+                    stroke_dict[char] = stroke
+            except Exception as e:
+                print(f"無法解析行: {line.strip()} 錯誤: {e}")
     return stroke_dict
-# 替換stroke_dict路徑
+# 個人端路徑(請更改)
 stroke_dict = load_stroke_dict_from_file("C:\\Users\\vanes\\OneDrive\\桌面\\characters.txt")
 
+# 磁場對應表
 name_map = {
     "伏位": {"00", "11", "22", "33", "44", "66", "77", "88", "99"},
     "延年": {"19", "91", "78", "87", "43", "34", "26", "62"},
@@ -43,7 +39,7 @@ name_map = {
     "五鬼": {"18", "81", "97", "79", "36", "63", "42", "24"},
 }
 
-# 保護使用者資料
+# 加密保護
 def load_key():
     if not os.path.exists("key.key"):
         key = Fernet.generate_key()
@@ -55,14 +51,10 @@ def load_key():
     return Fernet(key)
 
 fernet = load_key()
+def encrypt(text): return fernet.encrypt(text.encode()).decode()
+def decrypt(token): return fernet.decrypt(token.encode()).decode()
 
-def encrypt(text):
-    return fernet.encrypt(text.encode()).decode()
-
-def decrypt(token):
-    return fernet.decrypt(token.encode()).decode()
-
-# 分析數字規則並分組
+# 數字轉配對組合規則
 def transform_numbers(number_str):
     def handle_5_between_9_1(s):
         result = ''
@@ -85,13 +77,12 @@ def transform_numbers(number_str):
             number_str = number_str[1]*2 + number_str[1:]
         if number_str[-1] == '5':
             number_str = number_str[:-2] + number_str[-2]*2
-    # 0和5的特殊情形
     pairs = []
     for i in range(len(number_str) - 1):
         a, b = number_str[i], number_str[i+1]
         if (a == '0' and b != '5') or (b == '0' and a != '5'):
             pair = b*2 if a == '0' else a*2
-        elif a == '5' and b == '0' or a == '0' and b == '5':
+        elif (a == '5' and b == '0') or (a == '0' and b == '5'):
             pair = "00"
         elif a == '5' or b == '5':
             pair = b*2 if a == '5' else a*2
@@ -100,14 +91,12 @@ def transform_numbers(number_str):
         pairs.append(pair)
     return pairs
 
-# debug用，若程式無法判別磁場名稱，會返回未知
 def get_name_from_pair(pair):
     for name, group in name_map.items():
         if pair in group:
             return name
     return "未知"
 
-# 將輸入的數字分成兩兩一組的磁場名稱
 def analyze_input(input_str, is_id=False):
     if is_id:
         letter = input_str[0]
@@ -120,7 +109,6 @@ def analyze_input(input_str, is_id=False):
     names = [get_name_from_pair(pair) for pair in final_pairs]
     return " ".join(names)
 
-# 分析姓名筆劃，筆劃會被轉為一整串數字後兩兩分組，如：4111 -> 41, 11, 11
 def analyze_name_strokes(name_str):
     strokes = []
     for char in name_str:
@@ -129,141 +117,171 @@ def analyze_name_strokes(name_str):
         else:
             print(f"無法辨識字元「{char}」，請擴充 stroke_dict。")
             return
-    print("筆劃：", ' '.join(strokes))
-    stroke_string = ''.join(strokes)  # 例如：['4','1','11'] -> '4111'
+    stroke_string = ''.join(strokes)
     pairs = transform_numbers(stroke_string)
-    print("配對：", ' '.join(pairs))
     results = [get_name_from_pair(pair) for pair in pairs]
-    print("筆劃組合結果：", ' '.join(results))
+    return " ".join(results)
 
+def analyze_mixed_input(mixed_str):
+    result = ""
+    for ch in mixed_str.upper():
+        if ch.isalpha():
+            result += f"{ord(ch) - ord('A') + 1:02d}"
+        elif ch.isdigit():
+            result += ch
+        else:
+            continue
+    pairs = transform_numbers(result)
+    return " ".join(get_name_from_pair(pair) for pair in pairs)
 
-# 台灣身份證字號checksum(防呆)
+# 格式驗證
 def verify_twid(idstr):
-    if len(idstr) != 10:
+    if len(idstr) != 10 or not idstr[0].isupper() or not idstr[1:].isdigit() or idstr[1] not in ('1', '2'):
         return False
-    if not idstr[0].isupper() or not idstr[1:].isdigit():
-        return False
-    if idstr[1] not in ('1', '2'):
-        return False
-    cmap = [10, 11, 12, 13, 14, 15, 16, 17, 34, 18, 19, 20,
-            21, 22, 35, 23, 24, 25, 26, 27, 28, 29, 32, 30, 31, 33]
+    cmap = [10,11,12,13,14,15,16,17,34,18,19,20,21,22,35,23,24,25,26,27,28,29,32,30,31,33]
     num1 = cmap[ord(idstr[0]) - ord('A')]
     newid = str(num1) + idstr[1:]
-    weight = [1, 9, 8, 7, 6, 5, 4, 3, 2, 1, 1]
-    checksum = sum(int(newid[i]) * weight[i] for i in range(11))
-    return checksum % 10 == 0
+    weight = [1,9,8,7,6,5,4,3,2,1,1]
+    return sum(int(newid[i]) * weight[i] for i in range(11)) % 10 == 0
 
-# 確認使用者輸入的日期、手機號(台灣)正確
-def is_valid_date_format(date_str):
-    return bool(re.fullmatch(r"\d{4}/(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])", date_str))
+def is_valid_mobile(m): return re.fullmatch(r"09\d{8}", m)
+def is_valid_date_format(d): return re.fullmatch(r"\d{4}/(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])", d)
 
-def is_valid_mobile(mobile_str):
-    return bool(re.fullmatch(r"09\d{8}", mobile_str))
+# 歷史紀錄
+def get_history_filename(type_code):
+    return {
+        "1": "birthday_history.enc",
+        "2": "mobile_history.enc",
+        "3": "id_history.enc",
+        "4": "name_history.enc",
+        "5": "mixed_history.enc"
+    }.get(type_code, "unknown.enc")
 
-# 儲存使用者資料
-def save_to_history(birthday, mobile, identity, name_input):
-    with open("history.enc", "a", encoding="utf-8") as f:
-        encrypted_data = encrypt(f"{birthday},{mobile},{identity},{name_input}")
-        f.write(encrypted_data + "\n")
+def save_to_history(data, type_code):
+    with open(get_history_filename(type_code), "a", encoding="utf-8") as f:
+        f.write(encrypt(data) + "\n")
 
-def load_history():
-    if not os.path.exists("history.enc"):
-        return []
-    with open("history.enc", "r", encoding="utf-8") as f:
-        history = []
-        for line in f:
-            data = decrypt(line.strip()).split(",")
-            print(f"讀取的資料：{data}")
-            if len(data) == 4:
-                history.append(tuple(data))
-            else:
-                print(f"無效的歷史資料：{line.strip()}")
-        return history
+def load_history(type_code):
+    filename = get_history_filename(type_code)
+    if not os.path.exists(filename): return []
+    with open(filename, "r", encoding="utf-8") as f:
+        return [decrypt(line.strip()) for line in f]
 
-def write_history(data):
-    with open("history.enc", "w", encoding="utf-8") as f:
-        for entry in data:
-            f.write(encrypt(",".join(entry)) + "\n")
+def write_history(data_list, type_code):
+    with open(get_history_filename(type_code), "w", encoding="utf-8") as f:
+        for data in data_list:
+            f.write(encrypt(data) + "\n")
 
-def delete_history():
-    history = load_history()
+def delete_history(type_code):
+    history = load_history(type_code)
     if not history:
         print("沒有資料可刪除。")
         return
-    for idx, (b, m, i, n) in enumerate(history, 1):
-        print(f"{idx}: 生日={b}, 手機={m}, 身分證={i}, 姓名={n}")
-    print("輸入要刪除的編號，或輸入 all 來刪除全部。")
-    choice = input("請輸入：").strip().lower()
+    for idx, item in enumerate(history, 1):
+        print(f"{idx}: {item}")
+    choice = input("輸入要刪除的編號，或輸入 all 來刪除全部：").strip().lower()
     if choice == "all":
-        write_history([])
-        print("已刪除所有歷史資料。")
+        write_history([], type_code)
     elif choice.isdigit() and 1 <= int(choice) <= len(history):
         del history[int(choice)-1]
-        write_history(history)
-        print("已刪除指定資料。")
+        write_history(history, type_code)
     else:
         print("格式不符")
 
-# 實作主程式流程
+# 主程式
 def main():
-    print("選擇操作：")
-    print("1. 使用先前輸入的資料")
-    print("2. 輸入新資料")
-    print("3. 刪除歷史資料")
+    print("請選擇操作模式：\n1. 分析磁場\n2. 刪除歷史資料")
+    choice = input("請輸入選項代碼（1或2）：").strip()
 
-    choice = input("請輸入 1、2 或3：").strip()
-
-    if choice == "1":
-        history = load_history()
-        if not history:
-            print("尚無歷史資料，請改用新資料。")
-            return main()
-        for idx, (b, m, i, n) in enumerate(history, 1):
-            print(f"{idx}: 生日={b}, 手機={m}, 身分證={i}, 姓名={n}")
-        index = input("請選擇編號使用：").strip()
-        if not index.isdigit() or not (1 <= int(index) <= len(history)):
-            print("格式不符")
-            return
-        birthday, mobile, identity, name_input = history[int(index)-1]
-
-    elif choice == "2":
-        birthday = input("輸入生日(格式YYYY/MM/DD)：").strip()
-        if not is_valid_date_format(birthday):
-            print("格式不符")
-            return
-        mobile = input("輸入手機號碼(格式：0912345678)：").strip()
-        if not is_valid_mobile(mobile):
-            print("格式不符")
-            return
-        identity = input("輸入身分證字號(格式：A123456789)：").strip()
-        if not verify_twid(identity):
-            print("格式不符")
-            return
-        name_input = input("若欲分析姓名筆劃，請輸入姓名：").strip()
-        consent = input("是否儲存本次輸入資料？(Y/N)：").strip().upper()
-        if consent == "Y":
-            save_to_history(birthday, mobile, identity, name_input)
-
-    elif choice == "3":
-        delete_history()
+    if choice == "2":
+        print("選擇類別：1.生日 2.手機 3.身分證 4.姓名 5.英數混合")
+        delete_choice = input("請輸入類別代碼：").strip()
+        delete_history(delete_choice)
         return
+
+    elif choice != "1":
+        print("無效的選項。")
+        return
+
+    print("請選擇輸入類型：\n1. 生日\n2. 手機\n3. 身分證\n4. 姓名\n5. 英數混合")
+    choice_input = input("請輸入代碼（1~5）：").strip()
+
+    def select_from_history():
+        history = load_history(choice_input)
+        if not history:
+            print("無歷史資料可用")
+            return None
+        print("請選擇歷史資料：")
+        for idx, item in enumerate(history, 1):
+            print(f"{idx}: {item}")
+        idx = input("輸入編號選擇，或按 Enter 取消：").strip()
+        if idx.isdigit() and 1 <= int(idx) <= len(history):
+            return history[int(idx) - 1]
+        return None
+
+    use_history = input("是否使用歷史資料？(Y/N)：").strip().upper() == "Y"
+    selected_data = None
+
+    if use_history:
+        selected_data = select_from_history()
+        if not selected_data:
+            print("取消選擇歷史資料，請手動輸入。")
+            use_history = False
+
+    if choice_input == "1":
+        birth = selected_data if use_history else input("請輸入生日（YYYY/MM/DD）：").strip()
+        if not is_valid_date_format(birth):
+            print("日期格式錯誤")
+            return
+        result = analyze_input(birth.replace("/", ""))
+        print("分析結果：", result)
+        if not use_history and input("是否儲存紀錄？(Y/N)：").strip().upper() == "Y":
+            save_to_history(birth, "1")
+
+    elif choice_input == "2":
+        mobile = selected_data if use_history else input("請輸入手機號碼：").strip()
+        if not is_valid_mobile(mobile):
+            print("手機格式錯誤")
+            return
+        result = analyze_input(mobile)
+        print("分析結果：", result)
+        if not use_history and input("是否儲存紀錄？(Y/N)：").strip().upper() == "Y":
+            save_to_history(mobile, "2")
+
+    elif choice_input == "3":
+        id_number = selected_data if use_history else input("請輸入身分證號：").strip().upper()
+        if not verify_twid(id_number):
+            print("身分證格式錯誤")
+            return
+        result = analyze_input(id_number, is_id=True)
+        print("分析結果：", result)
+        if not use_history and input("是否儲存紀錄？(Y/N)：").strip().upper() == "Y":
+            save_to_history(id_number, "3")
+
+    elif choice_input == "4":
+        name = selected_data if use_history else input("請輸入姓名：").strip()
+        result = analyze_name_strokes(name)
+        print("分析結果：", result)
+        if not use_history and input("是否儲存紀錄？(Y/N)：").strip().upper() == "Y":
+            save_to_history(name, "4")
+
+    elif choice_input == "5":
+        mixed = selected_data if use_history else input("請輸入英數字混合字串：").strip()
+        result = analyze_mixed_input(mixed)
+        print("分析結果：", result)
+        if not use_history and input("是否儲存紀錄？(Y/N)：").strip().upper() == "Y":
+            save_to_history(mixed, "5")
+
     else:
-        print("格式不符")
-        return main()
+        print("無效代碼")
+        return
 
-    print("選擇操作：")
-    print("1. 分析")
-    print("2. 退出")
+    if input("是否查看歷史紀錄？(Y/N)：").strip().upper() == "Y":
+        history = load_history(choice_input)
+        print("歷史資料：")
+        for idx, item in enumerate(history, 1):
+            print(f"{idx}: {item}")
 
-    operation_choice = input("請輸入 1 或 2：").strip()
-
-    if operation_choice == "1":
-        print(analyze_input(birthday.replace("/", "")))
-        print(analyze_input(mobile))
-        print(analyze_input(identity, is_id=True))
-        analyze_name_strokes(name_input)
-    else:
-        print("退出中...")
 
 if __name__ == "__main__":
     main()
