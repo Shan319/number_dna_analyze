@@ -1,5 +1,4 @@
 # ui/main_window.py
-
 import tkinter as tk
 from ui.input_module import create_input_frame
 from ui.result_module import create_result_frame
@@ -34,3 +33,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
