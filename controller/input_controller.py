@@ -31,33 +31,3 @@ def collect_input_data(name_var, id_var, custom_var, use_name, use_id, use_custo
     input_data["other_conditions"] = {k: v.get() for k, v in other_vars.items()}
 
     return input_data
-'''
-def analyze_input(data):
-    # 假資料模擬分析結果
-    result = {
-        "counts": {
-            "天醫": 2,
-            "五鬼": 1,
-            "六煞": 0
-        },
-        "adjustments": [
-            "(天醫-1)", "(絕命-1)"
-        ],
-        "summary": {
-            "strengths": {
-                "天醫": "賺錢有如神助、外型氣質俱佳",
-                "五鬼": "鬼才洋溢、快速學習力"
-            },
-            "financial_strategy": {
-                "天醫": "智慧投資，行善積福",
-                "五鬼": "創新思維，謹慎投資"
-            }
-        }
-    }
-    return result
-'''
-
-
-# def analyze_input(data):
-#     return analyze_number(data)
-
