@@ -3,7 +3,8 @@
 import tkinter as tk
 import json
 from ui.settings_module import create_settings_frame
-from controller.input_controller import collect_input_data, analyze_input
+from controller.analysis_controller import analyze
+
 
 from ui.settings_module import create_settings_frame, digit_var, custom_digit_var,mixed_var, english_position_var, fixed_eng_var, fixed_num_var,default_vars, other_vars
 
@@ -21,7 +22,7 @@ def create_input_frame(root, result_frame):
 
     def on_analyze_click():  #  點擊「分析」按鈕，執行on_analyze_click函數
         data = collect_input_data(name_var, id_var, custom_var, use_name, use_id, use_custom)  # 收集輸入資料
-        result = analyze_input(data)  # 分析輸入資料，回傳「分析結果」的result
+        result = analyze(data)  # 分析輸入資料，回傳「分析結果」的result
 
         # 顯示結果到右側 result_frame
         for widget in result_frame.winfo_children():
