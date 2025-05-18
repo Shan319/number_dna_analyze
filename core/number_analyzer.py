@@ -47,12 +47,12 @@ magnetic_fields = {
              "relationship_advice": "和諧相處，避免糾纏，設定清晰界限"}
 }
 
-# 使用者輸入 
+# 使用者輸入
 input_type = input("請輸入資料來源類別（身分證字號、生日、手機號碼、姓名）：").strip()
-input_str = input("請輸入磁場名稱（以空格分隔）：").strip()
+input_str = input("請輸入磁場名稱（以空格分隔）：").strip()  #默認參數?
 input_list = input_str.split()
 
-# 初步計數 
+# 初步計數
 base_counts = Counter(input_list)
 print("\n[磁場出現次數與關鍵字]")  # 標題更新
 

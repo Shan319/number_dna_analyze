@@ -25,7 +25,7 @@ def load_stroke_dict_from_file(filename):
                 print(f"無法解析行: {line.strip()} 錯誤: {e}")
     return stroke_dict
 # 個人端路徑(請更改)
-stroke_dict = load_stroke_dict_from_file("C:\\Users\\vanes\\OneDrive\\桌面\\characters.txt")
+stroke_dict = load_stroke_dict_from_file("C:\Users\user\Desktop\python\number_dna_analyze\resources\characters.txt")
 
 # 磁場對應表
 name_map = {
