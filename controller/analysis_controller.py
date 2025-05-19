@@ -23,7 +23,7 @@ def analyze(input_data):
     分析用戶輸入數據
     Args:
         input_data (dict): 從input_controller收集的用戶輸入
-    Returns：
+    Returns:
         dict: 包含分析結果和推薦數字的字典
     """
     logger.info("開始分析用戶輸入數據")
@@ -108,7 +108,7 @@ def apply_advanced_rules(input_list):
     應用進階分析規則處理磁場序列
     Args:
         input_list (list): 磁場名稱列表
-    Returns：
+    Returns:
         tuple: (調整後的計數字典, 調整日誌)
     """
     # 初步計數
@@ -197,7 +197,7 @@ def generate_field_details(adjusted_counts):
     生成各個磁場的詳細資訊
     Args:
         adjusted_counts (dict): 調整後的磁場計數
-    Returns：
+    Returns:
         dict: 包含磁場詳細資訊的字典
     """
     field_details = {}
@@ -225,7 +225,7 @@ def generate_lucky_numbers(adjusted_counts, length=4, count=5):
         adjusted_counts (dict): 調整後的磁場計數
         length (int): 生成數字長度
         count (int): 生成數量
-    Returns：
+    Returns:
         list: 幸運數字列表
     """
     try:

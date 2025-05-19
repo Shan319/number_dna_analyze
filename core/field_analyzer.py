@@ -27,6 +27,7 @@ def load_stroke_dict_from_file(filename):
     return stroke_dict
 # 個人端路徑(請更改)
 # stroke_dict = load_stroke_dict_from_file("C:\Users\user\Desktop\python\number_dna_analyze\resources\characters.txt")
+
 # 獲取專案目錄路徑
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

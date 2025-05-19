@@ -10,544 +10,973 @@
 提供簡潔的介面以存取規則
 管理規則版本與更新
 """
+
 import os
 import json
-from utils.config import config
 import logging
+import time
+from pathlib import Path
+from typing import Dict, List, Any, Optional, Union, Tuple
+import shutil
 
-# Setup logging
-logger = logging.getLogger(__name__)
+# 如果可用，導入模型定義
+try:
+    from data.models import MagneticField, MagneticPair, RuleModel
+    models_available = True
+except ImportError:
+    models_available = False
+
+# 設定日誌記錄器
+logger = logging.getLogger("數字DNA分析器.RuleRepository")
 
 class RuleRepository:
-    """易經數字規則庫，管理和提供所有數字規則資料"""
+    """規則庫類，管理磁場分析規則"""
 
-    def __init__(self, rules_dir: str = "resources/rules"):
+    def __init__(self, file_manager=None, rules_dir: str = None):
         """
-        Initialize the rule repository.
+        初始化規則庫
 
         Args:
-            rules_dir: Directory path containing the rule JSON files
+            file_manager: 檔案管理器實例
+            rules_dir (str): 規則檔案目錄，如果為None則使用預設路徑
         """
-        # 基本路徑設置
-        self.rules_dir = rules_dir
-        self.base_rules_path = os.path.join(rules_dir, "base_rules.json")
-        self.field_rules_path = os.path.join(rules_dir, "field_rules.json")
+        self.logger = logging.getLogger("數字DNA分析器.RuleRepository")
 
-        # 讀取規則數據
-        self._base_rules = None
-        self._field_rules = None
-        self._field_pairs_lookup = None  # 用於快速查詢磁場
-        self._field_strength_lookup = None  # 用於快速查詢強度
+        # 儲存檔案管理器
+        self.file_manager = file_manager
 
-        # 從基本規則中提取的常用資料
-        self.number_meanings = {}  # 數字意義
-        self.number_elements = {}  # 數字五行屬性
-        self.number_energy = {}    # 數字陰陽屬性
-        self.number_combinations = {}  # 數字組合效果
+        # 設定規則目錄
+        if rules_dir is None:
+            base_dir = Path(__file__).parent.parent
+            self.rules_dir = os.path.join(base_dir, "resources", "rules")
+        else:
+            self.rules_dir = rules_dir
 
-        # 從磁場規則中提取的常用資料
-        self.field_types = {}            # 磁場類型
-        self.neutralization_rules = {}   # 化解規則
+        # 確保目錄存在
+        os.makedirs(self.rules_dir, exist_ok=True)
 
-        # 整合的磁場對應表
-        self._magnetic_field_map = {
-            "伏位": {"11", "22", "33", "44", "66", "77", "88", "99"},
-            "延年": {"19", "91", "78", "87", "43", "34", "26", "62"},
-            "生氣": {"14", "41", "67", "76", "93", "39", "28", "82"},
-            "天醫": {"13", "31", "68", "86", "94", "49", "72", "27"},
-            "六煞": {"16", "61", "74", "47", "38", "83", "92", "29"},
-            "絕命": {"12", "21", "69", "96", "84", "48", "37", "73"},
-            "禍害": {"17", "71", "98", "89", "64", "46", "32", "23"},
-            "五鬼": {"18", "81", "97", "79", "36", "63", "42", "24"}
-        }
+        # 初始化規則快取
+        self.rules_cache = {}
+        self.last_update_time = {}
 
-        # 整合的磁場關鍵字
-        self._field_keywords = {
-            "伏位": {"蓄勢待發", "狀況延續", "臥虎藏龍"},
-            "生氣": {"貴人", "轉機", "好名聲"},
-            "天醫": {"主大才", "天生聰穎", "文筆好"},
-            "延年": {"意志堅定的領袖格局"},
-            "絕命": {"高IQ低EQ", "大起大落的極端特質"},
-            "禍害": {"口舌", "病弱", "心機"},
-            "五鬼": {"最有才華但最不穩定", "際遇波折"},
-            "六煞": {"情感", "婚姻", "或人際關係方面糾葛"}
-        }
+        # 常用規則檔案路徑
+        self.base_rules_path = os.path.join(self.rules_dir, "base_rules.json")
+        self.field_rules_path = os.path.join(self.rules_dir, "field_rules.json")
 
-        # 載入規則
-        self._load_rules()
+        # 檢查是否需要初始化
+        self._check_and_initialize_rules()
 
-    def _load_rules(self):
-        """
-        Load rules from JSON files and initialize lookups.
-        從JSON文件加載規則並初始化查詢表。
-        """
-        try:
-            # 載入基本規則
-            if os.path.exists(self.base_rules_path):
-                with open(self.base_rules_path, 'r', encoding='utf-8') as f:
-                    self._base_rules = json.load(f)
-                logger.info(f"Base rules loaded from {self.base_rules_path}")
+        self.logger.info(f"規則庫初始化完成，規則目錄: {self.rules_dir}")
 
-                # 提取基本規則數據到專用變數
-                self.number_meanings = self._base_rules.get("number_meanings", {})
-                self.number_elements = self._base_rules.get("number_elements", {})
-                self.number_energy = self._base_rules.get("number_energy", {})
-                self.number_combinations = self._base_rules.get("number_combinations", {})
-            else:
-                logger.warning(f"Base rules file not found at {self.base_rules_path}")
-                self._base_rules = {}
+    def _check_and_initialize_rules(self):
+        """檢查並初始化規則檔案"""
+        # 檢查基本規則檔案
+        if not os.path.exists(self.base_rules_path):
+            self.logger.warning(f"基本規則檔案不存在: {self.base_rules_path}")
+            self._initialize_base_rules()
 
-            # 載入磁場規則
-            if os.path.exists(self.field_rules_path):
-                with open(self.field_rules_path, 'r', encoding='utf-8') as f:
-                    self._field_rules = json.load(f)
-                logger.info(f"Field rules loaded from {self.field_rules_path}")
+        # 檢查磁場規則檔案
+        if not os.path.exists(self.field_rules_path):
+            self.logger.warning(f"磁場規則檔案不存在: {self.field_rules_path}")
+            self._initialize_field_rules()
 
-                # 提取磁場規則數據到專用變數
-                self.field_types = self._field_rules.get("field_types", {})
-                self.neutralization_rules = self._field_rules.get("neutralization_rules", {})
-            else:
-                logger.warning(f"Field rules file not found at {self.field_rules_path}")
-                self._field_rules = {}
-
-            # 初始化查詢表，提高訪問速度
-            self._build_field_lookups()
-
-        except (json.JSONDecodeError, IOError) as e:
-            logger.error(f"Error loading rules: {e}")
-            raise RuntimeError(f"Failed to load rules: {e}")
-
-    def _build_field_lookups(self) -> None:
-        """
-        Build lookup tables for quick access to field data.
-        建立快速查詢表以便快速訪問磁場數據。
-        """
-        self._field_pairs_lookup = {}
-        self._field_strength_lookup = {}
-
-        if not self._field_rules:
-            # 如果沒有載入磁場規則，則使用hard_code的磁場數據
-            for field_name, pairs in self._magnetic_field_map.items():
-                for pair in pairs:
-                    self._field_pairs_lookup[pair] = {
-                        "fieldId": field_name.lower().replace("磁場", ""),
-                        "fieldName": field_name
-                    }
-            return
-
-        # 從磁場規則中建立查詢表
-        for field_group in self._field_rules.get("fieldGroups", []):
-            field_id = field_group.get("groupId")
-            field_name = field_group.get("groupName")
-
-            # 將每個數字對映射到其磁場
-            for pair in field_group.get("fieldPairs", []):
-                self._field_pairs_lookup[pair] = {
-                    "fieldId": field_id,
-                    "fieldName": field_name
+    def _initialize_base_rules(self):
+        """初始化基本規則檔案"""
+        default_base_rules = {
+            "version": "1.0.0",
+            "last_updated": time.time(),
+            "energy_numbers": {
+                "1": {
+                    "name": "太陽數",
+                    "description": "領導力、自信、創造力",
+                    "positive": "領導能力、創新思維、積極主動",
+                    "negative": "自我中心、固執、傲慢",
+                    "career": "管理職位、創意工作、自主創業",
+                    "relationships": "喜歡主導關係，需要有耐心的伴侶"
+                },
+                "2": {
+                    "name": "月亮數",
+                    "description": "和諧、平衡、敏感",
+                    "positive": "善解人意、協調能力、直覺敏銳",
+                    "negative": "過度敏感、優柔寡斷、情緒波動",
+                    "career": "輔導、外交、團隊合作",
+                    "relationships": "善於聆聽，珍視情感連結"
+                },
+                "3": {
+                    "name": "木星數",
+                    "description": "表達、樂觀、創意",
+                    "positive": "溝通能力強、熱情開朗、創意豐富",
+                    "negative": "表面化、缺乏耐心、三分鐘熱度",
+                    "career": "藝術、媒體、銷售",
+                    "relationships": "善於表達感情，樂於分享"
+                },
+                "4": {
+                    "name": "天王星數",
+                    "description": "穩定、務實、耐心",
+                    "positive": "踏實可靠、條理分明、堅持不懈",
+                    "negative": "固執保守、缺乏變通、過度拘泥",
+                    "career": "工程、財務、規劃",
+                    "relationships": "忠誠可靠，重視承諾"
+                },
+                "5": {
+                    "name": "水星數",
+                    "description": "自由、變化、冒險",
+                    "positive": "適應力強、好奇心重、喜歡探索",
+                    "negative": "缺乏恆心、不安分、衝動",
+                    "career": "旅遊、行銷、自由職業",
+                    "relationships": "需要空間與自由，不喜被束縛"
+                },
+                "6": {
+                    "name": "金星數",
+                    "description": "愛、和諧、責任",
+                    "positive": "關愛他人、審美能力強、責任感強",
+                    "negative": "過度犧牲、完美主義、過度操心",
+                    "career": "設計、諮詢、服務業",
+                    "relationships": "重視家庭和諧，願意付出"
+                },
+                "7": {
+                    "name": "海王星數",
+                    "description": "精神、智慧、分析",
+                    "positive": "思考深刻、直覺敏銳、追求知識",
+                    "negative": "過度分析、懷疑主義、不切實際",
+                    "career": "研究、寫作、心靈工作",
+                    "relationships": "重視精神連結，內斂含蓄"
+                },
+                "8": {
+                    "name": "土星數",
+                    "description": "權力、成就、物質",
+                    "positive": "組織能力強、權威性、商業頭腦",
+                    "negative": "工作狂、控制慾強、物質主義",
+                    "career": "企業管理、金融、投資",
+                    "relationships": "追求穩定，提供安全感"
+                },
+                "9": {
+                    "name": "火星數",
+                    "description": "完成、智慧、人道",
+                    "positive": "同理心強、博愛精神、智慧成熟",
+                    "negative": "不切實際、不合群、沉溺過去",
+                    "career": "教育、公益、心理諮詢",
+                    "relationships": "富有同情心，追求理想關係"
                 }
+            },
+            "number_combinations": {
+                "11": {"name": "高靈數", "description": "精神啟發、直覺、靈性"},
+                "22": {"name": "大師數", "description": "實現夢想、建設者、領導者"},
+                "33": {"name": "教師數", "description": "慈悲、教導、奉獻"}
+            }
+        }
 
-            # 映射強度等級
-            strength_levels = field_group.get("strengthLevels", {})
-            for level, pairs in strength_levels.items():
-                level_value = int(level.replace("level", ""))
-                for pair in pairs:
-                    self._field_strength_lookup[pair] = {
-                        "fieldId": field_id,
-                        "fieldName": field_name,
-                        "strengthLevel": level_value
-                    }
+        try:
+            # 儲存預設規則
+            with open(self.base_rules_path, 'w', encoding='utf-8') as f:
+                json.dump(default_base_rules, f, ensure_ascii=False, indent=4)
 
-    def reload_rules(self) -> bool:
+            self.logger.info(f"已創建預設基本規則檔案: {self.base_rules_path}")
+        except Exception as e:
+            self.logger.error(f"創建預設基本規則檔案失敗: {e}")
+
+    def _initialize_field_rules(self):
+        """初始化磁場規則檔案"""
+        default_field_rules = {
+            "version": "1.0.0",
+            "last_updated": time.time(),
+            "magnetic_pairs": {
+                "伏位": ["00", "11", "22", "33", "44", "66", "77", "88", "99"],
+                "延年": ["19", "91", "78", "87", "43", "34", "26", "62"],
+                "生氣": ["14", "41", "67", "76", "93", "39", "28", "82"],
+                "天醫": ["13", "31", "68", "86", "94", "49", "72", "27"],
+                "六煞": ["16", "61", "74", "47", "38", "83", "92", "29"],
+                "絕命": ["12", "21", "69", "96", "84", "48", "37", "73"],
+                "禍害": ["17", "71", "98", "89", "64", "46", "32", "23"],
+                "五鬼": ["18", "81", "97", "79", "36", "63", "42", "24"]
+            },
+            "magnetic_fields": {
+                "伏位": {
+                    "keywords": ["蓄勢待發", "狀況延續", "臥虎藏龍"],
+                    "strengths": "有耐心、責任心強、幽默風趣、善於溝通協調",
+                    "weaknesses": "矛盾交錯、沒有安全感、主觀意識強、作風保守",
+                    "financial_strategy": "耐心積累，穩健投資，適合選擇風險較低、回報穩定的金融產品",
+                    "relationship_advice": "尋求穩定與安全感，在互動中需要耐心溝通"
+                },
+                "生氣": {
+                    "keywords": ["貴人", "轉機", "好名聲"],
+                    "strengths": "樂天派、凡事不強求、熱心助人、擁有好人緣",
+                    "weaknesses": "企圖心不旺盛，由於對任何事不強求隨遇而安",
+                    "financial_strategy": "積極開拓，慎選機遇，避免盲目跟風",
+                    "relationship_advice": "積極互動，珍惜緣分，避免過度追求新鮮感"
+                },
+                "天醫": {
+                    "keywords": ["主大才", "天生聰穎", "文筆好"],
+                    "strengths": "賺錢有如神助、諸事順遂、外型氣質俱佳",
+                    "weaknesses": "極度善良，偶爾會被蒙騙",
+                    "financial_strategy": "智慧投資，行善積福，防範詐騙",
+                    "relationship_advice": "關懷對方，共同成長，給予情感支持"
+                },
+                "延年": {
+                    "keywords": ["意志堅定的領袖格局"],
+                    "strengths": "決斷力強、內斂成熟",
+                    "weaknesses": "缺少彈性變通，做事強勢，一板一眼",
+                    "financial_strategy": "領導風範，規劃未來，長期財務規劃",
+                    "relationship_advice": "領導與支持，平衡關係，聆聽對方意見"
+                },
+                "絕命": {
+                    "keywords": ["高IQ低EQ", "大起大落的極端特質"],
+                    "strengths": "反應靈敏、善於謀略，重視精神層面",
+                    "weaknesses": "缺乏圓融、執著己見",
+                    "financial_strategy": "冷靜應對，規避風險，避免情緒化決策",
+                    "relationship_advice": "情緒管理，避免極端，冷靜處理糾紛"
+                },
+                "禍害": {
+                    "keywords": ["口舌", "病弱", "心機"],
+                    "strengths": "辯才無礙、能言善道",
+                    "weaknesses": "口舌之爭不斷、身體狀況不佳",
+                    "financial_strategy": "口才服人，謹慎決策，避免過度自信",
+                    "relationship_advice": "慎選言辭，避免衝突，注意言辭影響"
+                },
+                "五鬼": {
+                    "keywords": ["最有才華但最不穩定", "際遇波折"],
+                    "strengths": "鬼才洋溢、快速的學習力",
+                    "weaknesses": "變動太快，難以產生安定力量",
+                    "financial_strategy": "創新思維，謹慎投資，避免忽視風險",
+                    "relationship_advice": "創新互動，忠誠為本，保持透明度"
+                },
+                "六煞": {
+                    "keywords": ["情感", "婚姻", "或人際關係方面糾葛"],
+                    "strengths": "異性緣特別好、具有俊男美女的外貌",
+                    "weaknesses": "總是為情所困，感情、事業、工作不順遂",
+                    "financial_strategy": "和諧人際，謹慎合作，明確權責界限",
+                    "relationship_advice": "和諧相處，避免糾纏，設定清晰界限"
+                }
+            },
+            "rule_cancellations": {
+                "天醫_絕命": {"description": "天醫可抵消絕命", "ratio": 1},
+                "延年_六煞": {"description": "延年可抵消六煞", "ratio": 1},
+                "生氣伏位_禍害": {"description": "生氣和伏位的組合可抵消禍害", "ratio": 1},
+                "天醫延年_禍害": {"description": "天醫和延年的組合可抵消禍害", "ratio": 1},
+                "生氣天醫延年_五鬼": {"description": "生氣、天醫和延年的組合可抵消五鬼", "ratio": 1}
+            },
+            "transform_rules": {
+                "number_5": {
+                    "start": "後面數字的兩倍",
+                    "end": "前面數字的兩倍",
+                    "middle": "移除",
+                    "special_9_5_1": "變成9191"
+                },
+                "number_0": {
+                    "with_5": "變成00",
+                    "with_others": "另一個數字的兩倍"
+                }
+            }
+        }
+
+        try:
+            # 儲存預設規則
+            with open(self.field_rules_path, 'w', encoding='utf-8') as f:
+                json.dump(default_field_rules, f, ensure_ascii=False, indent=4)
+
+            self.logger.info(f"已創建預設磁場規則檔案: {self.field_rules_path}")
+        except Exception as e:
+            self.logger.error(f"創建預設磁場規則檔案失敗: {e}")
+
+    def _load_rule_file(self, file_path: str) -> Dict[str, Any]:
         """
         載入規則檔案
-        Load rules from JSON files and initialize lookups.
+
         Args:
-            file_path: 規則文件路徑
+            file_path (str): 規則檔案路徑
 
         Returns:
-            規則數據，若載入失敗則回傳空字典
-
+            Dict[str, Any]: 規則數據
         """
+        # 檢查檔案是否存在
+        if not os.path.exists(file_path):
+            self.logger.warning(f"規則檔案不存在: {file_path}")
+            return {}
+
+        # 檢查檔案是否已載入且未修改
+        file_mtime = os.path.getmtime(file_path)
+        if file_path in self.rules_cache and file_mtime <= self.last_update_time.get(file_path, 0):
+            return self.rules_cache[file_path]
+
         try:
-            self._load_rules()
-            logger.info("Rules successfully reloaded")
-            return json.load(f)
+            # 使用檔案管理器載入（如果可用）
+            if self.file_manager and hasattr(self.file_manager, 'load_resource_json'):
+                # 計算相對路徑
+                rel_path = os.path.relpath(file_path, self.file_manager.resources_dir)
+                rules = self.file_manager.load_resource_json(rel_path)
+            else:
+                # 直接讀取檔案
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    rules = json.load(f)
+
+            # 更新快取
+            self.rules_cache[file_path] = rules
+            self.last_update_time[file_path] = file_mtime
+
+            self.logger.debug(f"成功載入規則檔案: {file_path}")
+            return rules
+        except json.JSONDecodeError:
+            self.logger.error(f"規則檔案格式錯誤: {file_path}")
+            return {}
         except Exception as e:
-            logger.error(f"載入規則文件 {file_path} 失敗: {e}")
+            self.logger.error(f"載入規則檔案失敗: {file_path}, 錯誤: {e}")
             return {}
 
-    #  def __init__(self):
-        """初始化規則庫，載入規則數據"""
-        # 載入基本規則和磁場規則
-        self.base_rules = self._load_rules(config.get_base_rules_path())
-        self.field_rules = self._load_rules(config.get_field_rules_path())
+    def _save_rule_file(self, file_path: str, rules: Dict[str, Any]) -> bool:
+        """
+        儲存規則檔案
 
-        # 從基本規則中提取數字意義
-        self.number_meanings = self.base_rules.get("number_meanings", {})  # 數字意義
-        self.number_elements = self.base_rules.get("number_elements", {})  # 數字五行屬性
-        self.number_energy = self.base_rules.get("number_energy", {})      # 數字陰陽屬性
-        self.number_combinations = self.base_rules.get("number_combinations", {})  # 數字組合
-
-        # 從磁場規則中提取八大磁場定義
-        self.field_types = self.field_rules.get("field_types", {})          # 磁場類型
-        self.neutralization_rules = self.field_rules.get("neutralization_rules", {})  # 化解規則
-
-    # def _load_rules(self, file_path):
-        """載入規則檔案
-        Load rules from JSON files and initialize lookups.
         Args:
-            file_path: 規則文件路徑
+            file_path (str): 規則檔案路徑
+            rules (Dict[str, Any]): 規則數據
 
         Returns:
-            規則數據，若載入失敗則回傳空字典
+            bool: 儲存是否成功
         """
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"載入規則文件 {file_path} 失敗: {e}")
-            return {}
-    def get_number_conversion_rules(self):
+            # 更新時間戳
+            rules["last_updated"] = time.time()
+
+            # 使用檔案管理器儲存（如果可用）
+            if self.file_manager and hasattr(self.file_manager, 'save_resource_json'):
+                # 計算相對路徑
+                rel_path = os.path.relpath(file_path, self.file_manager.resources_dir)
+                success = self.file_manager.save_resource_json(rel_path, rules)
+            else:
+                # 備份現有檔案（如果存在）
+                if os.path.exists(file_path):
+                    backup_path = f"{file_path}.bak"
+                    shutil.copy2(file_path, backup_path)
+
+                # 直接寫入檔案
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(rules, f, ensure_ascii=False, indent=4)
+                success = True
+
+            if success:
+                # 更新快取
+                self.rules_cache[file_path] = rules
+                self.last_update_time[file_path] = time.time()
+
+            self.logger.debug(f"成功儲存規則檔案: {file_path}")
+            return success
+        except Exception as e:
+            self.logger.error(f"儲存規則檔案失敗: {file_path}, 錯誤: {e}")
+            return False
+
+    def load_base_rules(self) -> Dict[str, Any]:
         """
-        Get rules for converting and preprocessing numbers.
-        獲取數字轉換和預處理規則。
+        載入基本規則
 
         Returns:
-            Dictionary containing number conversion rules
-            包含數字轉換規則的字典
+            Dict[str, Any]: 基本規則數據
         """
-        if not self._base_rules:
-            # 如果沒有載入基本規則，返回默認的轉換規則
-            return {
-                "name": "numberPreprocessing",
-                "description": "規則：數字轉換與預處理",
-                "specialNumbers": {
-                    "five": {
-                        "atBoundary": "頭尾的5視為與相鄰數字相同",
-                        "inMiddle": "中間的5跳過並合併前後數字",
-                        "betweenOneAndNine": "在1和9之間的5處理後，重複前後數字"
-                    },
-                    "zero": "數字0視為與相鄰數字相同"
-                }
-            }
+        return self._load_rule_file(self.base_rules_path)
 
-        # 從JSON規則檔案返回數字預處理規則
-        preprocessing_rules = self._base_rules.get("numberPreprocessing", {})
-        return preprocessing_rules
-
-    def get_bit_partitioning_rules(self):
+    def load_field_rules(self) -> Dict[str, Any]:
         """
-        Get rules for dividing numbers into bit pairs.
-        獲取數字劃分為位元對的規則。
+        載入磁場規則
 
         Returns:
-            Dictionary containing bit partitioning rules
-            包含位元劃分規則的字典
+            Dict[str, Any]: 磁場規則數據
         """
-        if not self._base_rules:
-            # 如果沒有載入基本規則，返回默認的位元劃分規則
-            return {
-                "name": "bitPartitioning",
-                "description": "規則：位元劃分",
-                "method": "每兩位數字組成一個位元",
-                "examples": "如1234567共有6個位元：12,23,34,45,56,67"
-            }
+        return self._load_rule_file(self.field_rules_path)
 
-        # 從JSON規則檔案返回位元劃分規則
-        partitioning_rules = self._base_rules.get("bitPartitioning", {})
-        return partitioning_rules
-
-    def get_field_mapping_rules(self):
+    def load_rules(self) -> Dict[str, Any]:
         """
-        Get rules for mapping bit pairs to magnetic fields.
-        獲取位元對應到磁場的規則。
+        載入所有規則
 
         Returns:
-            Dictionary containing field mapping rules
-            包含磁場對應規則的字典
+            Dict[str, Any]: 所有規則數據
         """
-        if not self._base_rules:
-            # 如果沒有載入基本規則，使用磁場對應表
+        base_rules = self.load_base_rules()
+        field_rules = self.load_field_rules()
 
-            # 磁場對應表
-            name_map = {
-                "伏位": {"00", "11", "22", "33", "44", "66", "77", "88", "99"},
-                "延年": {"19", "91", "78", "87", "43", "34", "26", "62"},
-                "生氣": {"14", "41", "67", "76", "93", "39", "28", "82"},
-                "天醫": {"13", "31", "68", "86", "94", "49", "72", "27"},
-                "六煞": {"16", "61", "74", "47", "38", "83", "92", "29"},
-                "絕命": {"12", "21", "69", "96", "84", "48", "37", "73"},
-                "禍害": {"17", "71", "98", "89", "64", "46", "32", "23"},
-                "五鬼": {"18", "81", "97", "79", "36", "63", "42", "24"},
-            }
+        # 合併規則
+        rules = {
+            "base_rules": base_rules,
+            "field_rules": field_rules
+        }
 
-            # 使用磁場對應表創建規則字典
-            field_mapping = {
-                "name": "fieldMapping",
-                "description": "規則：位元磁場判讀",
-                "fieldDefinitions": {},
-                "pairMappings": {}
-            }
+        return rules
 
-            # 將磁場對應表轉換為適合的格式
-            for field_name, pairs in name_map.items():
-                # 使用磁場名稱作為字典鍵
-                field_key = field_name
-
-                # 設置磁場定義
-                field_mapping["fieldDefinitions"][field_key] = {
-                    "name": field_name,
-                    "pairs": list(pairs)
-                }
-
-                # 設置數字對應的磁場
-                for pair in pairs:
-                    field_mapping["pairMappings"][pair] = field_name
-
-            # 添加獲取磁場名稱的方法定義
-            field_mapping["methods"] = {
-                "getFieldNameByPair": "根據數字對獲取對應的磁場名稱"
-            }
-
-            return field_mapping
-
-        # 從JSON規則檔案返回磁場映射規則
-        mapping_rules = self._base_rules.get("fieldMapping", {})
-
-        # 若沒有 pairMappings，則建立
-        if "pairMappings" not in mapping_rules and "fieldDefinitions" in mapping_rules:
-            mapping_rules["pairMappings"] = {}
-            for field_key, field_info in mapping_rules["fieldDefinitions"].items():
-                if "pairs" in field_info:
-                    field_name = field_info["name"]
-                    for pair in field_info["pairs"]:
-                        mapping_rules["pairMappings"][pair] = field_name
-
-        return mapping_rules
-
-    def get_field_name_by_pair(self, pair: str):
+    def update_base_rules(self, rules: Dict[str, Any]) -> bool:
         """
-        Get field name for a given bit pair.
-        根據數字對應獲取磁場名稱。
+        更新基本規則
 
         Args:
-            pair: Two-digit pair to look up
-            要查詢的兩位數對
+            rules (Dict[str, Any]): 基本規則數據
 
         Returns:
-            Field name, or "未知" if not found
-            磁場名稱，若未找到則返回"未知"
+            bool: 更新是否成功
         """
-        # 獲取對應磁場
-        mapping_rules = self.get_field_mapping_rules()
+        # 確保版本號
+        if "version" not in rules:
+            rules["version"] = "1.0.0"
 
-        # 嘗試從 pairMappings 中找到對應的磁場
-        if "pairMappings" in mapping_rules and pair in mapping_rules["pairMappings"]:
-            return mapping_rules["pairMappings"][pair]
+        return self._save_rule_file(self.base_rules_path, rules)
 
-        # 方案二:遍歷 fieldDefinitions
-        if "fieldDefinitions" in mapping_rules:
-            for field_key, field_info in mapping_rules["fieldDefinitions"].items():
-                if "pairs" in field_info and pair in field_info["pairs"]:
-                    return field_info["name"]
+    def update_field_rules(self, rules: Dict[str, Any]) -> bool:
+        """
+        更新磁場規則
 
-        # 方案三:磁場對應表
-        for field_name, pairs in self._magnetic_field_map.items():
+        Args:
+            rules (Dict[str, Any]): 磁場規則數據
+
+        Returns:
+            bool: 更新是否成功
+        """
+        # 確保版本號
+        if "version" not in rules:
+            rules["version"] = "1.0.0"
+
+        return self._save_rule_file(self.field_rules_path, rules)
+
+    def get_magnetic_pairs(self) -> Dict[str, List[str]]:
+        """
+        獲取磁場對應的數字對
+
+        Returns:
+            Dict[str, List[str]]: 磁場對應的數字對
+        """
+        field_rules = self.load_field_rules()
+        return field_rules.get("magnetic_pairs", {})
+
+    def get_magnetic_fields(self) -> Dict[str, Dict[str, Any]]:
+        """
+        獲取磁場屬性
+
+        Returns:
+            Dict[str, Dict[str, Any]]: 磁場屬性
+        """
+        field_rules = self.load_field_rules()
+        return field_rules.get("magnetic_fields", {})
+
+    def get_rule_cancellations(self) -> Dict[str, Dict[str, Any]]:
+        """
+        獲取規則抵消關係
+
+        Returns:
+            Dict[str, Dict[str, Any]]: 規則抵消關係
+        """
+        field_rules = self.load_field_rules()
+        return field_rules.get("rule_cancellations", {})
+
+    def get_transform_rules(self) -> Dict[str, Dict[str, Any]]:
+        """
+        獲取數字轉換規則
+
+        Returns:
+            Dict[str, Dict[str, Any]]: 數字轉換規則
+        """
+        field_rules = self.load_field_rules()
+        return field_rules.get("transform_rules", {})
+
+    def get_energy_numbers(self) -> Dict[str, Dict[str, Any]]:
+        """
+        獲取數字能量屬性
+
+        Returns:
+            Dict[str, Dict[str, Any]]: 數字能量屬性
+        """
+        base_rules = self.load_base_rules()
+        return base_rules.get("energy_numbers", {})
+
+    def get_number_combinations(self) -> Dict[str, Dict[str, Any]]:
+        """
+        獲取數字組合屬性
+
+        Returns:
+            Dict[str, Dict[str, Any]]: 數字組合屬性
+        """
+        base_rules = self.load_base_rules()
+        return base_rules.get("number_combinations", {})
+
+    def get_field_by_pair(self, pair: str) -> str:
+        """
+        根據數字對獲取對應的磁場
+
+        Args:
+            pair (str): 數字對，如 "13"
+
+        Returns:
+            str: 磁場名稱，如 "天醫"
+        """
+        magnetic_pairs = self.get_magnetic_pairs()
+
+        for field, pairs in magnetic_pairs.items():
             if pair in pairs:
-                return field_name
+                return field
 
         return "未知"
 
-    def get_energy_strength_rules(self):
+    def get_field_attributes(self, field_name: str) -> Dict[str, Any]:
         """
-        Get rules for determining energy strength levels.
-        獲取能量強度等級的規則。
+        獲取磁場的屬性
+
+        Args:
+            field_name (str): 磁場名稱
 
         Returns:
-            Dictionary containing energy strength rules
-            包含能量強度規則的字典
+            Dict[str, Any]: 磁場屬性
         """
-        if not self._base_rules:
-            # 如果沒有載入基本規則，返回默認的能量強度規則
-            strength_rules = {
-                "name": "energyStrength",
-                "description": "規則：位元磁場能量強度",
-                "strengthLevels": {
-                    "level3": "最高強度",
-                    "level2": "高強度",
-                    "level1": "中等強度",
-                    "level0": "低強度"
+        magnetic_fields = self.get_magnetic_fields()
+        return magnetic_fields.get(field_name, {})
+
+    def get_base_rule_version(self) -> str:
+        """
+        獲取基本規則版本
+
+        Returns:
+            str: 版本號
+        """
+        base_rules = self.load_base_rules()
+        return base_rules.get("version", "unknown")
+
+    def get_field_rule_version(self) -> str:
+        """
+        獲取磁場規則版本
+
+        Returns:
+            str: 版本號
+        """
+        field_rules = self.load_field_rules()
+        return field_rules.get("version", "unknown")
+
+    def import_rules(self, file_path: str) -> bool:
+        """
+        從檔案匯入規則
+
+        Args:
+            file_path (str): 規則檔案路徑
+
+        Returns:
+            bool: 匯入是否成功
+        """
+        try:
+            # 讀取檔案
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            # 檢查規則類型
+            if "energy_numbers" in data:
+                # 是基本規則
+                return self.update_base_rules(data)
+            elif "magnetic_pairs" in data:
+                # 是磁場規則
+                return self.update_field_rules(data)
+            else:
+                self.logger.warning(f"未知的規則類型: {file_path}")
+                return False
+        except json.JSONDecodeError:
+            self.logger.error(f"規則檔案格式錯誤: {file_path}")
+            return False
+        except Exception as e:
+            self.logger.error(f"匯入規則失敗: {file_path}, 錯誤: {e}")
+            return False
+
+    def export_rules(self, file_path: str, rule_type: str = "all") -> bool:
+        """
+        匯出規則到檔案
+
+        Args:
+            file_path (str): 規則檔案路徑
+            rule_type (str): 規則類型，可以是 "all", "base", "field"
+
+        Returns:
+            bool: 匯出是否成功
+        """
+        try:
+            if rule_type == "base" or rule_type == "all":
+                base_rules = self.load_base_rules()
+
+                if rule_type == "base":
+                    # 匯出基本規則
+                    with open(file_path, 'w', encoding='utf-8') as f:
+                        json.dump(base_rules, f, ensure_ascii=False, indent=4)
+
+                    self.logger.debug(f"成功匯出基本規則: {file_path}")
+                    return True
+
+            if rule_type == "field" or rule_type == "all":
+                field_rules = self.load_field_rules()
+
+                if rule_type == "field":
+                    # 匯出磁場規則
+                    with open(file_path, 'w', encoding='utf-8') as f:
+                        json.dump(field_rules, f, ensure_ascii=False, indent=4)
+
+                    self.logger.debug(f"成功匯出磁場規則: {file_path}")
+                    return True
+
+            if rule_type == "all":
+                # 匯出所有規則
+                all_rules = {
+                    "base_rules": base_rules,
+                    "field_rules": field_rules
                 }
-            }
 
-            return strength_rules
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(all_rules, f, ensure_ascii=False, indent=4)
 
-        # 從JSON規則檔案返回能量強度規則
-        strength_rules = self._base_rules.get("energyStrength", {})
-        return strength_rules
+                self.logger.debug(f"成功匯出所有規則: {file_path}")
+                return True
 
-    def get_number_fields(self, number_sequence):
-        """分析數字序列中的磁場
+            self.logger.warning(f"未知的規則類型: {rule_type}")
+            return False
+        except Exception as e:
+            self.logger.error(f"匯出規則失敗: {file_path}, 錯誤: {e}")
+            return False
 
-        參數:
-            number_sequence: 數字序列
-
-        返回:
-            包含各磁場數量的字典
+    def reset_to_default(self, rule_type: str = "all") -> bool:
         """
-        # 初始化八大磁場計數
-        fields = {
-            "伏位": 0, "生氣": 0, "天醫": 0, "延年": 0,
-            "絕命": 0, "禍害": 0, "五鬼": 0, "六煞": 0
-        }
+        重置規則為預設值
 
-        # 檢查單個數字的磁場
-        for digit in number_sequence:
-            for field_name, field_info in self.field_types.items():
-                for pattern in field_info.get("patterns", []):
-                    if "digit" in pattern and pattern["digit"] == digit:
-                        fields[field_name] += pattern.get("value", 1)
+        Args:
+            rule_type (str): 規則類型，可以是 "all", "base", "field"
 
-        # 檢查數字組合的磁場
-        for i in range(len(number_sequence) - 1):
-            pair = number_sequence[i:i+2]  # 取相鄰兩個數字
-            for field_name, field_info in self.field_types.items():
-                for pattern in field_info.get("patterns", []):
-                    if "sequence" in pattern and pattern["sequence"] == pair:
-                        fields[field_name] += pattern.get("value", 1)
-
-        return fields
-
-    def get_neutralization_strategy(self, fields):
-        """根據當前磁場分佈，計算中和策略
-
-        參數:
-            fields: 當前磁場分佈
-
-        返回:
-            需要的正面磁場數量
+        Returns:
+            bool: 重置是否成功
         """
-        # 初始化需要的正面磁場
-        required_fields = {
-            "伏位": 0, "生氣": 0, "天醫": 0, "延年": 0
-        }
+        success = True
 
-        # 天醫欺絕命：一個天醫對應一個絕命
-        required_fields["天醫"] += fields.get("絕命", 0)
+        if rule_type in ["base", "all"]:
+            # 刪除基本規則檔案
+            if os.path.exists(self.base_rules_path):
+                os.remove(self.base_rules_path)
 
-        # 延年壓六煞：一個延年對應一個六煞
-        required_fields["延年"] += fields.get("六煞", 0)
+            # 初始化基本規則
+            self._initialize_base_rules()
 
-        # 化解禍害
-        # 策略：優先使用生氣+生氣，次之用生氣+延年，最後用生氣+伏位
-        huo_hai = fields.get("禍害", 0)
-        if huo_hai > 0:
-            # 分配生氣
-            required_fields["生氣"] += huo_hai
-            # 假設一半的禍害用生氣+生氣，一半用生氣+伏位
-            required_fields["伏位"] += huo_hai // 2  # 整除，取整數部分
-            required_fields["生氣"] += huo_hai // 2  # 額外生氣
+            # 清除快取
+            if self.base_rules_path in self.rules_cache:
+                del self.rules_cache[self.base_rules_path]
 
-        # 化解五鬼：需要生氣+天醫+延年的組合
-        wu_gui = fields.get("五鬼", 0)
-        if wu_gui > 0:
-            required_fields["生氣"] += wu_gui
-            required_fields["天醫"] += wu_gui
-            required_fields["延年"] += wu_gui
+            success = success and os.path.exists(self.base_rules_path)
 
-        return required_fields
+        if rule_type in ["field", "all"]:
+            # 刪除磁場規則檔案
+            if os.path.exists(self.field_rules_path):
+                os.remove(self.field_rules_path)
 
-    # def analyze_compatibility(self, number_sequence):
-        """分析數字序列的能量相容性
+            # 初始化磁場規則
+            self._initialize_field_rules()
 
-        參數:
-            number_sequence: 數字序列
+            # 清除快取
+            if self.field_rules_path in self.rules_cache:
+                del self.rules_cache[self.field_rules_path]
 
-        返回:
-            相容性分析結果
+            success = success and os.path.exists(self.field_rules_path)
+
+        return success
+
+    def validate_rules(self) -> Tuple[bool, List[str]]:
         """
-        # 計算磁場分佈
-        fields = self.get_number_fields(number_sequence)
+        驗證規則是否有效
 
-        # 計算正面和負面磁場總數
-        positive_count = sum(fields[f] for f in ["伏位", "生氣", "天醫", "延年"])  # 正面磁場總數
-        negative_count = sum(fields[f] for f in ["絕命", "禍害", "五鬼", "六煞"])  # 負面磁場總數
+        Returns:
+            Tuple[bool, List[str]]: (是否有效, 錯誤訊息列表)
+        """
+        errors = []
 
-        # 計算能量平衡度分數 (0-100)
-        if positive_count + negative_count == 0:
-            balance_score = 50  # 中性
+        # 載入規則
+        base_rules = self.load_base_rules()
+        field_rules = self.load_field_rules()
+
+        # 檢查基本規則
+        if not base_rules:
+            errors.append("基本規則檔案不存在或為空")
         else:
-            balance_score = min(100, int(positive_count / (positive_count + negative_count) * 100))
+            # 檢查必要欄位
+            if "energy_numbers" not in base_rules:
+                errors.append("基本規則缺少能量數字定義")
+            elif not isinstance(base_rules["energy_numbers"], dict):
+                errors.append("能量數字定義格式錯誤")
 
-        return {
-            "fields": fields,  # 各磁場數量
-            "positive_count": positive_count,  # 正面磁場總數
-            "negative_count": negative_count,  # 負面磁場總數
-            "balance_score": balance_score,    # 平衡度分數
-            "interpretation": self._generate_compatibility_interpretation(fields, balance_score)  # 解釋文字
-        }
+            if "number_combinations" not in base_rules:
+                errors.append("基本規則缺少數字組合定義")
+            elif not isinstance(base_rules["number_combinations"], dict):
+                errors.append("數字組合定義格式錯誤")
 
-    # def _generate_compatibility_interpretation(self, fields, balance_score):
-        """生成能量相容性的解釋文字
-
-        參數:
-            fields: 磁場分佈
-            balance_score: 平衡度分數
-
-        返回:
-            解釋文字
-        """
-        interpretation = []
-
-        # 根據平衡度給出總體評價
-        if balance_score >= 80:
-            interpretation.append("這組數字具有極佳的能量平衡，正面磁場顯著高於負面磁場。")
-        elif balance_score >= 60:
-            interpretation.append("這組數字能量較為平衡，正面磁場略高於負面磁場。")
-        elif balance_score >= 40:
-            interpretation.append("這組數字能量中性，正面與負面磁場大致平衡。")
-        elif balance_score >= 20:
-            interpretation.append("這組數字負面能量較強，建議尋找更平衡的組合。")
+        # 檢查磁場規則
+        if not field_rules:
+            errors.append("磁場規則檔案不存在或為空")
         else:
-            interpretation.append("這組數字負面能量顯著，強烈建議尋找更合適的組合。")
+            # 檢查必要欄位
+            if "magnetic_pairs" not in field_rules:
+                errors.append("磁場規則缺少數字對應定義")
+            elif not isinstance(field_rules["magnetic_pairs"], dict):
+                errors.append("數字對應定義格式錯誤")
 
-        # 分析主要的磁場
-        strongest_fields = []
-        for field, count in fields.items():
-            if count > 0:
-                strongest_fields.append((field, count))
+            if "magnetic_fields" not in field_rules:
+                errors.append("磁場規則缺少磁場屬性定義")
+            elif not isinstance(field_rules["magnetic_fields"], dict):
+                errors.append("磁場屬性定義格式錯誤")
 
-        # 按磁場數量排序
-        strongest_fields.sort(key=lambda x: x[1], reverse=True)
+            # 檢查磁場完整性
+            pairs = field_rules.get("magnetic_pairs", {})
+            fields = field_rules.get("magnetic_fields", {})
 
-        if strongest_fields:
-            top_fields = strongest_fields[:3]  # 取前三強的磁場
-            field_descriptions = []
+            # 所有磁場都應該有對應的數字對
+            for field in fields:
+                if field not in pairs:
+                    errors.append(f"磁場 {field} 缺少數字對應")
 
-            for field, count in top_fields:
-                if count > 0:
-                    # 顯示磁場類型和數量
-                    energy_type = "正面" if self.is_positive_field(field) else "負面"
-                    field_descriptions.append(f"{field}({count}個，{energy_type}能量)")
+            # 所有數字對應都應該有磁場屬性
+            for field in pairs:
+                if field not in fields:
+                    errors.append(f"數字對應 {field} 缺少磁場屬性")
 
-            if field_descriptions:
-                interpretation.append(f"主要磁場: {', '.join(field_descriptions)}。")
+            # 檢查數字對是否唯一
+            all_pairs = set()
+            for field, field_pairs in pairs.items():
+                for pair in field_pairs:
+                    if pair in all_pairs:
+                        errors.append(f"數字對 {pair} 在多個磁場中出現")
+                    all_pairs.add(pair)
 
-        # 提供改善建議
-        if balance_score < 60:
-            # 計算化解策略
-            strategy = self.get_neutralization_strategy(fields)
-            suggestions = []
+        return len(errors) == 0, errors
 
-            for field, count in strategy.items():
-                if count > 0:
-                    suggestions.append(f"{field} {count}個")
+    def update_field_attribute(self, field_name: str, attribute: str, value: Any) -> bool:
+        """
+        更新磁場屬性
 
-            if suggestions:
-                interpretation.append(f"建議增加以下正面磁場以改善能量平衡: {', '.join(suggestions)}。")
+        Args:
+            field_name (str): 磁場名稱
+            attribute (str): 屬性名稱
+            value (Any): 屬性值
 
-        return " ".join(interpretation)
+        Returns:
+            bool: 更新是否成功
+        """
+        field_rules = self.load_field_rules()
 
+        # 檢查磁場是否存在
+        if "magnetic_fields" not in field_rules:
+            field_rules["magnetic_fields"] = {}
 
+        if field_name not in field_rules["magnetic_fields"]:
+            field_rules["magnetic_fields"][field_name] = {}
 
+        # 更新屬性
+        field_rules["magnetic_fields"][field_name][attribute] = value
+
+        # 儲存規則
+        return self.update_field_rules(field_rules)
+
+    def update_number_attribute(self, number: str, attribute: str, value: Any) -> bool:
+        """
+        更新數字能量屬性
+
+        Args:
+            number (str): 數字
+            attribute (str): 屬性名稱
+            value (Any): 屬性值
+
+        Returns:
+            bool: 更新是否成功
+        """
+        base_rules = self.load_base_rules()
+
+        # 檢查數字是否存在
+        if "energy_numbers" not in base_rules:
+            base_rules["energy_numbers"] = {}
+
+        if number not in base_rules["energy_numbers"]:
+            base_rules["energy_numbers"][number] = {}
+
+        # 更新屬性
+        base_rules["energy_numbers"][number][attribute] = value
+
+        # 儲存規則
+        return self.update_base_rules(base_rules)
+
+    def get_model_objects(self) -> Dict[str, List[Any]]:
+        """
+        獲取模型對象（如果models模組可用）
+
+        Returns:
+            Dict[str, List[Any]]: 模型對象字典
+        """
+        if not models_available:
+            self.logger.warning("models模組不可用，無法創建模型對象")
+            return {}
+
+        result = {}
+
+        try:
+            # 載入規則
+            magnetic_fields = self.get_magnetic_fields()
+            magnetic_pairs = self.get_magnetic_pairs()
+
+            # 創建磁場模型
+            field_models = []
+            for field_name, attributes in magnetic_fields.items():
+                # 處理關鍵字
+                keywords = attributes.get("keywords", [])
+                if isinstance(keywords, str):
+                    keywords = [k.strip() for k in keywords.split("、")]
+
+                field_model = MagneticField(
+                    name=field_name,
+                    keywords=keywords,
+                    strengths=attributes.get("strengths", ""),
+                    weaknesses=attributes.get("weaknesses", ""),
+                    financial_strategy=attributes.get("financial_strategy", ""),
+                    relationship_advice=attributes.get("relationship_advice", "")
+                )
+                field_models.append(field_model)
+
+            result["magnetic_fields"] = field_models
+
+            # 創建磁場對模型
+            pair_models = []
+            for field_name, pairs in magnetic_pairs.items():
+                pair_model = MagneticPair(
+                    field=field_name,
+                    number_pairs=pairs
+                )
+                pair_models.append(pair_model)
+
+            result["magnetic_pairs"] = pair_models
+
+            return result
+        except Exception as e:
+            self.logger.error(f"創建模型對象失敗: {e}")
+            return {}
+
+    def backup_rules(self, backup_dir: str = None) -> Tuple[bool, str]:
+        """
+        備份規則檔案
+
+        Args:
+            backup_dir (str): 備份目錄，如果為None則使用預設目錄
+
+        Returns:
+            Tuple[bool, str]: (是否成功, 備份目錄)
+        """
+        if backup_dir is None:
+            # 使用時間戳創建備份目錄
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            backup_dir = os.path.join(os.path.dirname(self.rules_dir), "rules_backup", timestamp)
+
+        try:
+            # 確保備份目錄存在
+            os.makedirs(backup_dir, exist_ok=True)
+
+            # 備份基本規則
+            if os.path.exists(self.base_rules_path):
+                shutil.copy2(self.base_rules_path, os.path.join(backup_dir, os.path.basename(self.base_rules_path)))
+
+            # 備份磁場規則
+            if os.path.exists(self.field_rules_path):
+                shutil.copy2(self.field_rules_path, os.path.join(backup_dir, os.path.basename(self.field_rules_path)))
+
+            # 備份其他規則檔案
+            for filename in os.listdir(self.rules_dir):
+                if filename.endswith(".json") and filename not in [os.path.basename(self.base_rules_path), os.path.basename(self.field_rules_path)]:
+                    src = os.path.join(self.rules_dir, filename)
+                    dst = os.path.join(backup_dir, filename)
+                    shutil.copy2(src, dst)
+
+            self.logger.info(f"成功備份規則檔案到: {backup_dir}")
+            return True, backup_dir
+        except Exception as e:
+            self.logger.error(f"備份規則檔案失敗: {e}")
+            return False, ""
+
+    def restore_rules(self, backup_dir: str) -> bool:
+        """
+        從備份還原規則檔案
+
+        Args:
+            backup_dir (str): 備份目錄
+
+        Returns:
+            bool: 還原是否成功
+        """
+        if not os.path.exists(backup_dir):
+            self.logger.warning(f"備份目錄不存在: {backup_dir}")
+            return False
+
+        try:
+            # 備份當前規則
+            current_backup, _ = self.backup_rules()
+
+            # 還原基本規則
+            base_backup = os.path.join(backup_dir, os.path.basename(self.base_rules_path))
+            if os.path.exists(base_backup):
+                shutil.copy2(base_backup, self.base_rules_path)
+
+            # 還原磁場規則
+            field_backup = os.path.join(backup_dir, os.path.basename(self.field_rules_path))
+            if os.path.exists(field_backup):
+                shutil.copy2(field_backup, self.field_rules_path)
+
+            # 還原其他規則檔案
+            for filename in os.listdir(backup_dir):
+                if filename.endswith(".json") and filename not in [os.path.basename(self.base_rules_path), os.path.basename(self.field_rules_path)]:
+                    src = os.path.join(backup_dir, filename)
+                    dst = os.path.join(self.rules_dir, filename)
+                    shutil.copy2(src, dst)
+
+            # 清除快取
+            self.rules_cache.clear()
+            self.last_update_time.clear()
+
+            self.logger.info(f"成功從 {backup_dir} 還原規則檔案")
+            return True
+        except Exception as e:
+            self.logger.error(f"還原規則檔案失敗: {e}")
+            return False
+
+# 測試用程式
+if __name__ == "__main__":
+    # 設定日誌
+    logging.basicConfig(level=logging.DEBUG,
+                       format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    # 創建規則庫
+    repo = RuleRepository()
+
+    # 驗證規則
+    is_valid, errors = repo.validate_rules()
+    print(f"規則是否有效: {is_valid}")
+    if not is_valid:
+        print("錯誤:")
+        for error in errors:
+            print(f"  - {error}")
+
+    # 載入規則
+    base_rules = repo.load_base_rules()
+    field_rules = repo.load_field_rules()
+
+    print("\n基本規則版本:", repo.get_base_rule_version())
+    print("磁場規則版本:", repo.get_field_rule_version())
+
+    # 顯示磁場對應
+    magnetic_pairs = repo.get_magnetic_pairs()
+    print("\n磁場對應:")
+    for field, pairs in magnetic_pairs.items():
+        print(f"  {field}: {', '.join(pairs)}")
+
+    # 顯示磁場屬性
+    magnetic_fields = repo.get_magnetic_fields()
+    print("\n磁場屬性:")
+    for field, attributes in magnetic_fields.items():
+        print(f"  {field}:")
+        for key, value in attributes.items():
+            if isinstance(value, list):
+                value = ', '.join(value)
+            print(f"    {key}: {value}")
+
+    # 查找特定數字對的磁場
+    test_pair = "13"
+    print(f"\n數字對 {test_pair} 對應的磁場: {repo.get_field_by_pair(test_pair)}")
+
+    # 獲取特定磁場的屬性
+    test_field = "天醫"
+    field_attrs = repo.get_field_attributes(test_field)
+    print(f"\n磁場 {test_field} 的屬性:")
+    for key, value in field_attrs.items():
+        print(f"  {key}: {value}")
