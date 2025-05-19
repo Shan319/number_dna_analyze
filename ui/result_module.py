@@ -25,7 +25,7 @@ def create_result_frame(parent):
     創建結果顯示框架
 
     Args:
-        parent: 父容器
+        parent: 容器
 
     Returns:
         frame: 結果顯示框架
