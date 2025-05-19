@@ -3,6 +3,7 @@ import tkinter as tk
 from ui.input_module import create_input_frame
 from ui.result_module import create_result_frame
 
+from ui.settings_module import default_vars
 def main():
     root = tk.Tk()
     root.title("數字DNA分析器")
@@ -22,6 +23,9 @@ def main():
     left_frame.pack(side="left", fill="y", padx=10)
 
     # 右邊：結果顯示區域
+    result_frame = tk.Frame(content_frame)
+    result_frame.pack(side="left", expand=True, fill="both", padx=10)
+
     result_frame = create_result_frame(content_frame)
     result_frame.pack(side="left", expand=True, fill="both", padx=10)
 

@@ -1,4 +1,4 @@
-#  settings_module.py
+#  ui/settings_module.py
 
 import tkinter as tk
 
@@ -44,7 +44,8 @@ def create_settings_frame(root):
 
     tk.Label(frame, text="默認條件：", font=("Arial", 12, "bold")).grid(row=4, column=0, sticky="w")
     for i, text in enumerate(default_vars):
-        tk.Checkbutton(frame, text=f"抵消{text}", variable=default_vars[text]).grid(row=4, column=i+1, sticky="w")
+        button = tk.Checkbutton(frame, text=f"抵消{text}", variable=default_vars[text])
+        button.grid(row=4, column=i+1, sticky="w")
 
     tk.Label(frame, text="其他條件：", font=("Arial", 12, "bold")).grid(row=5, column=0, sticky="w")
     for i, text in enumerate(other_vars):
