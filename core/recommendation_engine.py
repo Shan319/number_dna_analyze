@@ -1,3 +1,4 @@
+#  core/recommendation_engine.py
 import random
 
 # 每種磁場對應的兩位數字組合
@@ -55,12 +56,33 @@ def generate_lucky_number_chain_by_cancel_fields(cancel_fields, length):
     # 起始磁場：從有剩餘的 cancel_fields 中選
     possible_start_fields = [f for f in remaining_fields if remaining_fields[f] > 0]
     random.shuffle(possible_start_fields)
+
+    start_field = None
     for field in possible_start_fields:
         if remaining_fields[field] > 0:
-            start_pair = random.choice(magneticic_pairs[field])
-            magnetic_sequence.append(start_pair)
-            remaining_fields[field] -= 1
-            break
+            # 檢查是否為複合字段
+            if '+' in field:
+                # 從複合字段中隨機選擇一個組成部分
+                components = field.split('+')
+                valid_components = [c for c in components if c in magneticic_pairs]
+                if valid_components:
+                    start_field = random.choice(valid_components)
+                    start_pair = random.choice(magneticic_pairs[start_field])
+                    magnetic_sequence.append(start_pair)
+                    remaining_fields[field] -= 1
+                    break
+            else:
+                if field in magneticic_pairs:
+                    start_pair = random.choice(magneticic_pairs[field])
+                    magnetic_sequence.append(start_pair)
+                    remaining_fields[field] -= 1
+                    break
+
+    # 如果沒有找到有效的起始字段，使用任意一個可用的磁場
+    if not magnetic_sequence:
+        start_field = random.choice(list(magneticic_pairs.keys()))
+        start_pair = random.choice(magneticic_pairs[start_field])
+        magnetic_sequence.append(start_pair)
 
     # 開始接龍
     while len(magnetic_sequence) < num_fields:
@@ -68,18 +90,70 @@ def generate_lucky_number_chain_by_cancel_fields(cancel_fields, length):
 
         # 找所有合法接得上的磁場對，且 cancel_fields 還有剩
         candidates = []
-        for field in ["天醫", "生氣", "伏位", "延年"]:
-            if remaining_fields.get(field, 0) > 0:
+        for field, count in remaining_fields.items():
+            if count <= 0:
+                continue
+
+            # 處理單一磁場
+            if field in magneticic_pairs:
                 for pair in magneticic_pairs[field]:
                     if pair[0] == last_digit:
                         candidates.append((field, pair))
+            # 處理複合磁場
+            elif '+' in field:
+                components = field.split('+')
+                for component in components:
+                    if component in magneticic_pairs:
+                        for pair in magneticic_pairs[component]:
+                            if pair[0] == last_digit:
+                                candidates.append((field, pair))
 
         if not candidates:
-            break  # 沒有可以接上的磁場對，結束
+            # 如果沒有剩餘的 cancel_fields 可用，就從所有磁場中隨機選擇一個
+            for base_field in magneticic_pairs:
+                for pair in magneticic_pairs[base_field]:
+                    if pair[0] == last_digit:
+                        candidates.append((None, pair))
 
-        field, pair = random.choice(candidates)
-        magnetic_sequence.append(pair)
-        remaining_fields[field] -= 1
+            if not candidates:
+                break  # 無法繼續接龍
+
+            # 隨機選擇一個候選對
+            _, pair = random.choice(candidates)
+            magnetic_sequence.append(pair)
+        else:
+            # 從剩餘的 cancel_fields 中選擇
+            field, pair = random.choice(candidates)
+            magnetic_sequence.append(pair)
+            remaining_fields[field] -= 1
+
+    # # 開始接龍
+    # while len(magnetic_sequence) < num_fields:
+    #     last_digit = magnetic_sequence[-1][1]
+
+    #     # 找所有合法接得上的磁場對，且 cancel_fields 還有剩
+    #     candidates = []
+    #     for field in ["天醫", "生氣", "伏位", "延年"]:
+    #         if remaining_fields.get(field, 0) > 0:
+    #             for pair in magneticic_pairs[field]:
+    #                 if pair[0] == last_digit:
+    #                     candidates.append((field, pair))
+    #     # 檢查複合字段
+    #     for field in list(remaining_fields.keys()):
+    #         if '+' in field and remaining_fields[field] > 0:
+    #             components = field.split('+')
+    #             for component in components:
+    #                 if component in magneticic_pairs:
+    #                     for pair in magneticic_pairs[component]:
+    #                         if pair[0] == last_digit:
+    #                             candidates.append((field, pair))
+
+    #     if not candidates:
+    #         break  # 沒有可以接上的磁場對，結束
+
+    #     field, pair = random.choice(candidates)
+    #     magnetic_sequence.append(pair)
+    #     remaining_fields[field] -= 1
 
     # 串接成幸運數字
     result = magnetic_sequence[0]

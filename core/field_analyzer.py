@@ -1,3 +1,4 @@
+#  core/field_analyzer.py
 '''
 (輸出格式暫定，只是為了方便除錯以及數字分析引擎使用)
 此為有英數混合的版本
@@ -25,7 +26,15 @@ def load_stroke_dict_from_file(filename):
                 print(f"無法解析行: {line.strip()} 錯誤: {e}")
     return stroke_dict
 # 個人端路徑(請更改)
-stroke_dict = load_stroke_dict_from_file("C:\Users\user\Desktop\python\number_dna_analyze\resources\characters.txt")
+# stroke_dict = load_stroke_dict_from_file("C:\Users\user\Desktop\python\number_dna_analyze\resources\characters.txt")
+# 獲取專案目錄路徑
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# 資源文件的路徑
+characters_path = os.path.join(base_dir, "resources", "characters.txt")
+
+# 載入筆劃字典
+stroke_dict = load_stroke_dict_from_file(characters_path)
 
 # 磁場對應表
 name_map = {
