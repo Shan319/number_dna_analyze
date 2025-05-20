@@ -1,5 +1,18 @@
 import random
-import string
+
+# 生成增強磁場
+def create_boost_field(tienyi, shenchi, yenien):
+    boost_fields = dict()
+    if tienyi:
+        boost_fields["天醫"] = 1
+    if shenchi:
+        boost_fields["生氣"] = 1
+    if yenien:
+        boost_fields["延年"] = 1
+
+    return boost_fields
+
+boost_fields = create_boost_field(tienyi, shenchi, yenien)
 
 # 每種磁場對應的兩位數字組合
 magneticic_pairs = {
@@ -8,6 +21,7 @@ magneticic_pairs = {
     "天醫": ["13", "31", "68", "86", "49", "94", "27", "72"],
     "延年": ["19", "91", "78", "87", "34", "43", "26", "62"]
 }
+
 
 # 產生抵銷表 & 五鬼三連段數量
 def cancel_negative_magnetic_field(magnetic_fields):
@@ -29,6 +43,7 @@ def cancel_negative_magnetic_field(magnetic_fields):
 
     return cancel_fields, wugui_count
 
+
 # 尋找一組生氣→天醫→延年 三連段（尾接頭）
 def find_triplet():
     triplets = []
@@ -41,8 +56,9 @@ def find_triplet():
                     triplets.append([("生氣", p1), ("天醫", p2), ("延年", p3)])
     return random.choice(triplets) if triplets else []
 
+
 # 根據 cancel_fields 與 wugui 數量 建立幸運數字
-def generate_lucky_number(cancel_fields, length, num_triplets):
+def generate_lucky_number(cancel_fields, length, num_triplets, boost_fields):
     num_fields = length - 1
     magnetic_sequence = []
     remaining_fields = cancel_fields.copy()
@@ -79,6 +95,16 @@ def generate_lucky_number(cancel_fields, length, num_triplets):
                         break
             break
 
+    if boost_fields:
+        for field in boost_fields:
+            if field in magneticic_pairs:
+                last_digit = magnetic_sequence[-1][1] if magnetic_sequence else None
+                valid_boosts = [p for p in magneticic_pairs[field] if last_digit is None or p[0] == last_digit]
+                if valid_boosts:
+                    magnetic_sequence.append(random.choice(valid_boosts))
+                else:
+                    magnetic_sequence.append(random.choice(magneticic_pairs[field]))
+
     if not magnetic_sequence:
         return ""
     result = magnetic_sequence[0]
@@ -87,54 +113,36 @@ def generate_lucky_number(cancel_fields, length, num_triplets):
 
     return result
 
-def generate_two_random_letters():
-    return ''.join(random.sample(string.ascii_lowercase, 2))
 
-def insert_letters(num_str, letters, position):
+def generate_final_lucky_number(magnetic_fields, total_length, fixed_part="", position="front"):
+    # Step 1: 計算剩餘可用長度
+    lucky_length = total_length - len(fixed_part)
+    if lucky_length < 2:
+        return fixed_part[:total_length]  # 無法產生有效幸運碼，只能裁切固定字串
+
+    # Step 2: 取得正向磁場需求與三連段數
+    cancel_fields, wugui_count = cancel_negative_magnetic_field(magnetic_fields)
+
+    # Step 3: 產生幸運數字（需 lucky_length 長度）
+    lucky_number = generate_lucky_number(cancel_fields, lucky_length, wugui_count)
+
+    # Step 4: 插入固定字串
     if position == "front":
-        return letters + num_str
+        result = fixed_part + lucky_number
     elif position == "middle":
-        mid = len(num_str) // 2
-        return num_str[:mid] + letters + num_str[mid:]
+        mid = len(lucky_number) // 2
+        result = lucky_number[:mid] + fixed_part + lucky_number[mid:]
     elif position == "back":
-        return num_str + letters
+        result = lucky_number + fixed_part
     else:
-        return num_str
+        raise ValueError("position 參數需為 'front'、'middle' 或 'back'")
 
-def generate_multiple_lucky_numbers(magnetic_input, total_length, count=15, alphanumeric=False, letter_pos="back", fixed_part=""):
-    cancel, wugui_triplets = cancel_negative_magnetic_field(magnetic_input)
+    return result[:total_length]
+
+
+def generate_multiple_lucky_numbers(magnetic_fields, total_length=10, count = 15, fixed_part, position):
     results = []
-
-    is_fixed_alpha = fixed_part.isalpha()
-    is_fixed_digit = fixed_part.isdigit()
-    fixed_len = len(fixed_part)
-
     for _ in range(count):
-        if not alphanumeric:
-            if not fixed_part:
-                lucky = generate_lucky_number(cancel, total_length, wugui_triplets)
-                results.append(lucky)
-            elif is_fixed_digit:
-                remain_len = total_length - fixed_len
-                lucky = generate_lucky_number(cancel, remain_len, wugui_triplets)
-                results.append(fixed_part + lucky)
-
-        else:
-            if not fixed_part:
-                letters = generate_two_random_letters()
-                num_len = total_length - 2
-                lucky = generate_lucky_number(cancel, num_len, wugui_triplets)
-                results.append(insert_letters(lucky, letters, letter_pos))
-
-            elif is_fixed_alpha:
-                num_len = total_length - fixed_len
-                lucky = generate_lucky_number(cancel, num_len, wugui_triplets)
-                results.append(insert_letters(lucky, fixed_part, letter_pos))
-
-            elif is_fixed_digit:
-                num_len = total_length - fixed_len
-                letters = generate_two_random_letters()
-                lucky = generate_lucky_number(cancel, num_len - 2, wugui_triplets)
-                results.append(fixed_part + insert_letters(lucky, letters, letter_pos))
-
+        result = generate_final_lucky_number(magnetic_fields, total_length, fixed_part, position)
+        results.append(result)
     return results
