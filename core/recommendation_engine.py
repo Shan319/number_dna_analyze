@@ -14,6 +14,7 @@ def create_boost_field(tienyi, shenchi, yenien):
 
 boost_fields = create_boost_field(tienyi, shenchi, yenien)
 
+
 # 每種磁場對應的兩位數字組合
 magneticic_pairs = {
     "伏位": ["11", "22", "33", "44", "66", "77", "88", "99"],
@@ -83,17 +84,11 @@ def generate_lucky_number(cancel_fields, length, num_triplets, boost_fields):
                     if last_digit is None or pair[0] == last_digit:
                         candidates.append((field, pair))
 
-        if candidates:
-            field, pair = random.choice(candidates)
-            magnetic_sequence.append(pair)
-            remaining_fields[field] -= 1
-        else:
-            if last_digit:
-                for pair in magneticic_pairs["伏位"]:
-                    if pair[0] == last_digit:
-                        magnetic_sequence.append(pair)
-                        break
-            break
+        if not candidates:
+            break  # 跳出 while，轉交給 boost or fallback
+        field, pair = random.choice(candidates)
+        magnetic_sequence.append(pair)
+        remaining_fields[field] -= 1
 
     if boost_fields:
         for field in boost_fields:
@@ -105,13 +100,28 @@ def generate_lucky_number(cancel_fields, length, num_triplets, boost_fields):
                 else:
                     magnetic_sequence.append(random.choice(magneticic_pairs[field]))
 
+
+    while len(magnetic_sequence) < num_fields:
+        last_digit = magnetic_sequence[-1][1] if magnetic_sequence else None
+        # 嘗試找到可以接上的伏位 pair
+        found = False
+        for pair in magneticic_pairs["伏位"]:
+            if last_digit is None or pair[0] == last_digit:
+                magnetic_sequence.append(pair)
+                found = True
+                break
+        # 如果找不到相連的伏位組合，也直接隨機補一組
+        if not found:
+            magnetic_sequence.append(random.choice(magneticic_pairs["伏位"]))
+
+
     if not magnetic_sequence:
         return ""
     result = magnetic_sequence[0]
     for i in range(1, len(magnetic_sequence)):
         result += magnetic_sequence[i][1]
 
-    return result
+    return result[:length]
 
 
 def generate_final_lucky_number(magnetic_fields, total_length, fixed_part="", position="front"):
@@ -137,10 +147,10 @@ def generate_final_lucky_number(magnetic_fields, total_length, fixed_part="", po
     else:
         raise ValueError("position 參數需為 'front'、'middle' 或 'back'")
 
-    return result[:total_length]
+    return result
 
 
-def generate_multiple_lucky_numbers(magnetic_fields, total_length=10, count = 15, fixed_part, position):
+def generate_multiple_lucky_numbers(magnetic_fields, total_length=8, count = 15, fixed_part="lucky", position="middle"):
     results = []
     for _ in range(count):
         result = generate_final_lucky_number(magnetic_fields, total_length, fixed_part, position)
