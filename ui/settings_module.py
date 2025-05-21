@@ -24,22 +24,23 @@ def create_settings_frame(root):
     default_vars = {name: tk.BooleanVar() for name in ["五鬼", "六煞", "禍害", "絕命"]}
     other_vars = {name: tk.BooleanVar() for name in ["天醫", "生氣", "延年"]}
 
-    frame = tk.LabelFrame(root, text="生成條件設定", font=("Arial", 12))
+    frame = tk.LabelFrame(root, text="生成條件設定", font=("Arial", 12), padx=10, pady=10)
 
-    tk.Label(frame, text="數字位數：").grid(row=0, column=0, sticky="w")
+
+    tk.Label(frame, text="總位數：").grid(row=0, column=0, sticky="w")
     digits = [("4", "4"), ("6", "6"), ("8", "8"), ("自訂", "custom")]
     for i, (label, val) in enumerate(digits):
         tk.Radiobutton(frame, text=label, variable=digit_var, value=val).grid(row=0, column=i+1, sticky="w")
     tk.Entry(frame, textvariable=custom_digit_var, width=5).grid(row=0, column=5, sticky="w")
 
-    tk.Checkbutton(frame, text="英數混合", variable=mixed_var).grid(row=1, column=0, sticky="w")
-    tk.Radiobutton(frame, text="英文在前", variable=english_position_var, value="前").grid(row=1, column=1, sticky="w")
-    tk.Radiobutton(frame, text="英文在中", variable=english_position_var, value="中").grid(row=1, column=2, sticky="w")
-    tk.Radiobutton(frame, text="英文在後", variable=english_position_var, value="後").grid(row=1, column=3, sticky="w")
+    tk.Checkbutton(frame, text="添加固定選項", variable=mixed_var).grid(row=1, column=0, sticky="w")
+    tk.Label(frame, text="固定位置：").grid(row=2, column=0, sticky="w")
+    tk.Radiobutton(frame, text="前", variable=english_position_var, value="前").grid(row=2, column=1, sticky="w")
+    tk.Radiobutton(frame, text="中", variable=english_position_var, value="中").grid(row=2, column=2, sticky="w")
+    tk.Radiobutton(frame, text="後", variable=english_position_var, value="後").grid(row=2, column=3, sticky="w")
 
-    tk.Label(frame, text="固定英文：").grid(row=2, column=0, sticky="w")
-    tk.Entry(frame, textvariable=fixed_eng_var, width=10).grid(row=2, column=1, sticky="w")
-    tk.Label(frame, text="固定數字：").grid(row=3, column=0, sticky="w")
+    
+    tk.Label(frame, text="固定英文或數字：").grid(row=3, column=0, sticky="w")
     tk.Entry(frame, textvariable=fixed_num_var, width=10).grid(row=3, column=1, sticky="w")
 
     tk.Label(frame, text="默認條件：", font=("Arial", 12, "bold")).grid(row=4, column=0, sticky="w")
