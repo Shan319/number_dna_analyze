@@ -10,6 +10,7 @@ import logging
 from pathlib import Path
 import tkinter as tk
 from ui.main_window import main as ui_main
+from tkinter import messagebox
 
 # 設定資源路徑
 BASE_DIR = Path(__file__).resolve().parent
