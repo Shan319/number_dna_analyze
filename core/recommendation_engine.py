@@ -124,7 +124,7 @@ def generate_lucky_number(cancel_fields, length, num_triplets, boost_fields):
     return result[:length]
 
 
-def generate_final_lucky_number(magnetic_fields, total_length, fixed_part="", position="front"):
+def generate_final_lucky_number(magnetic_fields, total_length, fixed_part="", position):
     # Step 1: 計算剩餘可用長度
     lucky_length = total_length - len(fixed_part)
     if lucky_length < 2:
@@ -150,7 +150,7 @@ def generate_final_lucky_number(magnetic_fields, total_length, fixed_part="", po
     return result
 
 
-def generate_multiple_lucky_numbers(magnetic_fields, total_length=8, count = 15, fixed_part="lucky", position="middle"):
+def generate_multiple_lucky_numbers(magnetic_fields, total_length=8, count = 15, fixed_part=", position):
     results = []
     for _ in range(count):
         result = generate_final_lucky_number(magnetic_fields, total_length, fixed_part, position)
