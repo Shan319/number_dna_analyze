@@ -150,7 +150,7 @@ def generate_final_lucky_number(magnetic_fields, total_length, fixed_part="", po
     return result
 
 
-def generate_multiple_lucky_numbers(magnetic_fields, total_length=8, count = 15, fixed_part=", position):
+def generate_multiple_lucky_numbers(magnetic_fields, total_length, count = 15, fixed_part="", position):
     results = []
     for _ in range(count):
         result = generate_final_lucky_number(magnetic_fields, total_length, fixed_part, position)
