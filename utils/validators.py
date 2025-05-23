@@ -1,21 +1,26 @@
 # utils/validators.py
 import re
 
+
 def is_valid_id(id_str):
     """檢查身分證格式是否正確（台灣格式）"""
     return bool(re.match(r"^[A-Z][12]\d{8}$", id_str))
+
 
 def is_valid_digit_length(s):
     """檢查自訂數字位數是否為正整數"""
     return s.isdigit() and int(s) > 0
 
+
 def is_valid_fixed_eng(s):
     """檢查固定英文是否為 1~2 個英文字母"""
     return s == "" or (s.isalpha() and len(s) <= 2)
 
+
 def is_valid_fixed_num(s):
     """檢查固定數字是否為 1~4 位數字"""
     return s == "" or (s.isdigit() and len(s) <= 4)
+
 
 def validate_all(input_data):
     """整合所有檢查，回傳錯誤訊息清單"""

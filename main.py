@@ -89,10 +89,12 @@ def check_required_files():
 
     return True
 
+
 def handle_exception(exc_type, exc_value, exc_traceback):
     """處理異常函數"""
     logger.error("未捕獲的異常", exc_info=(exc_type, exc_value, exc_traceback))
     messagebox.showerror("錯誤", f"發生意外錯誤: {exc_value}\n\n請聯繫開發人員。")
+
 
 sys.excepthook = handle_exception
 

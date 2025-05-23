@@ -30,13 +30,13 @@ DEFAULT_CONFIG = {
     },
     "analysis": {
         "max_recommendations": 3,  # 最大推薦數量
-        "max_candidates": 1000,    # 最大候選數字數量
-        "calculation_timeout": 5   # 計算超時時間(秒)
+        "max_candidates": 1000,  # 最大候選數字數量
+        "calculation_timeout": 5  # 計算超時時間(秒)
     },
     "data": {
-        "use_encryption": True,    # 是否使用加密
+        "use_encryption": True,  # 是否使用加密
         "history_dir": "data/history",  # 歷史記錄目錄
-        "max_history_items": 50    # 最大歷史記錄數量
+        "max_history_items": 50  # 最大歷史記錄數量
     },
     "features": {
         "encryption": True,
@@ -47,6 +47,7 @@ DEFAULT_CONFIG = {
 
 # 全域設定
 _config = None
+
 
 def initialize(config_file=None):
     """
@@ -69,6 +70,7 @@ def initialize(config_file=None):
     logger.info("配置管理器已初始化")
 
     return _config
+
 
 def get_config(key=None, default=None):
     """
@@ -93,6 +95,7 @@ def get_config(key=None, default=None):
 
     return _config.get(key, default)
 
+
 def set_config(key, value):
     """
     設置設定值
@@ -116,6 +119,7 @@ def set_config(key, value):
     except Exception as e:
         logger.error(f"設置配置失敗: {e}")
         return False
+
 
 def save_config(config_file=None):
     """
@@ -144,6 +148,7 @@ def save_config(config_file=None):
         logger.error(f"保存配置失敗: {e}")
         return False
 
+
 def get_path(key):
     """
     獲取路徑設定
@@ -163,6 +168,7 @@ def get_path(key):
 
     return path
 
+
 def is_feature_enabled(feature_name):
     """
     檢查特定功能是否啟用
@@ -174,6 +180,7 @@ def is_feature_enabled(feature_name):
         如果功能啟用返回True，否則返回False
     """
     return get_config(f"features.{feature_name}", False)
+
 
 class Config:
     """管理設定類，處理應用程式設定"""
