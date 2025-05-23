@@ -18,6 +18,7 @@ import time
 from pathlib import Path
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 
+
 class LoggerManager:
     """日誌管理類，負責創建和配置日誌記錄器"""
 
@@ -85,9 +86,7 @@ class LoggerManager:
             console_handler = logging.StreamHandler(sys.stdout)
             console_handler.setLevel(self.log_level)
             console_formatter = logging.Formatter(
-                '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-                datefmt='%Y-%m-%d %H:%M:%S'
-            )
+                '%(asctime)s [%(levelname)s] %(name)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
             console_handler.setFormatter(console_formatter)
             root_logger.addHandler(console_handler)
 
@@ -95,27 +94,22 @@ class LoggerManager:
         log_file = os.path.join(self.log_dir, "app.log")
         file_handler = RotatingFileHandler(
             log_file,
-            maxBytes=10*1024*1024,  # 10MB
+            maxBytes=10 * 1024 * 1024,  # 10MB
             backupCount=5,
-            encoding='utf-8'
-        )
+            encoding='utf-8')
         file_handler.setLevel(self.log_level)
-        file_formatter = logging.Formatter(
-            '%(asctime)s [%(levelname)s] (%(name)s) %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
+        file_formatter = logging.Formatter('%(asctime)s [%(levelname)s] (%(name)s) %(message)s',
+                                           datefmt='%Y-%m-%d %H:%M:%S')
         file_handler.setFormatter(file_formatter)
         root_logger.addHandler(file_handler)
 
         # 創建每日日誌處理程序
         daily_log_file = os.path.join(self.log_dir, "daily.log")
-        daily_handler = TimedRotatingFileHandler(
-            daily_log_file,
-            when='midnight',
-            interval=1,
-            backupCount=30,
-            encoding='utf-8'
-        )
+        daily_handler = TimedRotatingFileHandler(daily_log_file,
+                                                 when='midnight',
+                                                 interval=1,
+                                                 backupCount=30,
+                                                 encoding='utf-8')
         daily_handler.setLevel(self.log_level)
         daily_handler.setFormatter(file_formatter)
         root_logger.addHandler(daily_handler)
@@ -124,16 +118,14 @@ class LoggerManager:
         error_log_file = os.path.join(self.log_dir, "error.log")
         error_handler = RotatingFileHandler(
             error_log_file,
-            maxBytes=10*1024*1024,  # 10MB
+            maxBytes=10 * 1024 * 1024,  # 10MB
             backupCount=5,
-            encoding='utf-8'
-        )
+            encoding='utf-8')
         error_handler.setLevel(logging.ERROR)
         error_formatter = logging.Formatter(
             '%(asctime)s [%(levelname)s] (%(name)s) %(message)s\n'
             'File "%(pathname)s", line %(lineno)d\n',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
+            datefmt='%Y-%m-%d %H:%M:%S')
         error_handler.setFormatter(error_formatter)
         root_logger.addHandler(error_handler)
 
@@ -161,12 +153,15 @@ class LoggerManager:
 
         # 更新所有處理程序的級別
         for handler in logging.getLogger().handlers:
-            if not isinstance(handler, logging.handlers.RotatingFileHandler) or handler.baseFilename.endswith("error.log"):
+            if not isinstance(handler, logging.handlers.RotatingFileHandler
+                              ) or handler.baseFilename.endswith("error.log"):
                 handler.setLevel(level)
 
         self.app_logger.info(f"全域日誌級別已設定為: {logging.getLevelName(level)}")
 
+
 # 便捷函數
+
 
 def initialize(log_dir=None, log_level=logging.INFO, enable_console=True):
     """
@@ -181,6 +176,7 @@ def initialize(log_dir=None, log_level=logging.INFO, enable_console=True):
         LoggerManager: 日誌管理器實例
     """
     return LoggerManager(log_dir, log_level, enable_console)
+
 
 def get_logger(name):
     """
@@ -198,6 +194,7 @@ def get_logger(name):
 
     return LoggerManager().get_logger(name)
 
+
 def set_level(level):
     """
     設定全域日誌級別
@@ -211,12 +208,14 @@ def set_level(level):
 
     LoggerManager().set_level(level)
 
+
 # 日誌級別常量 (便於導入)
 DEBUG = logging.DEBUG
 INFO = logging.INFO
 WARNING = logging.WARNING
 ERROR = logging.ERROR
 CRITICAL = logging.CRITICAL
+
 
 # 自定義日誌裝飾器
 def log_function_call(logger=None):
@@ -231,6 +230,7 @@ def log_function_call(logger=None):
         def some_function(arg1, arg2):
             pass
     """
+
     def decorator(func):
         # 如果沒有提供記錄器，使用函數所在模組的記錄器
         nonlocal logger
@@ -248,12 +248,14 @@ def log_function_call(logger=None):
                 return result
             except Exception as e:
                 end_time = time.time()
-                logger.error(f"{func.__name__} 執行異常，耗時: {end_time - start_time:.4f}秒，錯誤: {e}", exc_info=True)
+                logger.error(f"{func.__name__} 執行異常，耗時: {end_time - start_time:.4f}秒，錯誤: {e}",
+                             exc_info=True)
                 raise
 
         return wrapper
 
     return decorator
+
 
 def log_class_methods(cls=None, exclude=None):
     """
@@ -292,6 +294,7 @@ def log_class_methods(cls=None, exclude=None):
         return decorate(cls)
     return decorate
 
+
 # 測試代碼
 if __name__ == "__main__":
     # 初始化日誌系統
@@ -318,6 +321,7 @@ if __name__ == "__main__":
     # 測試類方法裝飾器
     @log_class_methods
     class TestClass:
+
         def __init__(self, name):
             self.name = name
 

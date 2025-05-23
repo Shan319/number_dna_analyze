@@ -20,6 +20,37 @@ from functools import partial
 # 設定日誌記錄器
 logger = logging.getLogger("數字DNA分析器.ResultModule")
 
+
+def create_result_content(parent: tk.Frame, result_data):
+    """
+    創建結果顯示框架
+
+    Args:
+        parent: 容器
+
+    Returns:
+        frame: 結果顯示框架
+    """
+    logger.info("創建結果顯示框架")
+
+    # frame = tk.Frame(parent)
+    frame = tk.LabelFrame(parent, text="分析結果", font=("Arial", 14))
+    if result_data is None:
+        # 創建主框架
+
+        # 初始資訊標籤
+        initial_label = tk.Label(frame,
+                                 text="請在左側輸入資料並點選「分析」按鈕",
+                                 font=("Arial", 12),
+                                 padx=20,
+                                 pady=20)
+        initial_label.pack(expand=True)
+    else:
+        update_display(frame, result_data)
+
+    return frame
+
+
 def create_result_frame(parent):
     """
     創建結果顯示框架
@@ -36,11 +67,7 @@ def create_result_frame(parent):
     frame = tk.LabelFrame(parent, text="分析結果", font=("Arial", 14))
 
     # 初始資訊標籤
-    initial_label = tk.Label(frame,
-                           text="請在左側輸入資料並點選「分析」按鈕",
-                           font=("Arial", 12),
-                           padx=20,
-                           pady=20)
+    initial_label = tk.Label(frame, text="請在左側輸入資料並點選「分析」按鈕", font=("Arial", 12), padx=20, pady=20)
     initial_label.pack(expand=True)
 
     # 將更新顯示方法附加到框架
@@ -54,6 +81,7 @@ def create_result_frame(parent):
 
     return frame
 
+
 def update_display(frame, result_data):
     """
     更新結果顯示內容
@@ -66,7 +94,7 @@ def update_display(frame, result_data):
         logger.warning("接收到空的分析結果")
         return
 
-    logger.debug(f"更新結果顯示: {result_data.get('input_type', '未知類型')}")
+    logger.info(f"更新結果顯示: {result_data.get('input_type', '未知類型')}")
 
     # 清空現有內容
     for widget in frame.winfo_children():
@@ -74,10 +102,7 @@ def update_display(frame, result_data):
 
     # 分析類型標頭
     input_type = result_data.get("input_type", "")
-    header = tk.Label(frame,
-                     text=f"分析類型: {input_type}",
-                     font=("Arial", 12, "bold"),
-                     anchor="w")
+    header = tk.Label(frame, text=f"分析類型: {input_type}", font=("Arial", 12, "bold"), anchor="w")
     header.pack(fill="x", padx=10, pady=(10, 5))
 
     # 使用Notebook創建選項卡界面
@@ -104,28 +129,25 @@ def update_display(frame, result_data):
     notebook.add(details_tab, text="磁場詳情")
     create_details_tab(details_tab, result_data)
 
-    # 底部按鈕區域
-    button_frame = tk.Frame(frame)
-    button_frame.pack(fill="x", padx=10, pady=10)
+    # # 底部按鈕區域
+    # button_frame = tk.Frame(frame)
+    # button_frame.pack(fill="x", padx=10, pady=10)
 
-    # 保存按鈕
-    save_btn = tk.Button(button_frame,
-                        text="儲存分析",
-                        command=lambda: save_result(result_data))
-    save_btn.pack(side="left", padx=5)
+    # # 保存按鈕
+    # save_btn = tk.Button(button_frame, text="儲存分析", command=lambda: save_result(result_data))
+    # save_btn.pack(side="left", padx=5)
 
-    # 匯出按鈕
-    export_btn = tk.Button(button_frame,
-                          text="匯出報告",
-                          command=lambda: export_report(result_data))
-    export_btn.pack(side="left", padx=5)
+    # # 匯出按鈕
+    # export_btn = tk.Button(button_frame, text="匯出報告", command=lambda: export_report(result_data))
+    # export_btn.pack(side="left", padx=5)
 
-    # 顯示視覺化按鈕
-    if "visualization" in result_data or "adjusted_counts" in result_data:
-        visual_btn = tk.Button(button_frame,
-                              text="磁場視覺化",
-                              command=lambda: show_visualization(result_data))
-        visual_btn.pack(side="right", padx=5)
+    # # 顯示視覺化按鈕
+    # if "visualization" in result_data or "adjusted_counts" in result_data:
+    #     visual_btn = tk.Button(button_frame,
+    #                            text="磁場視覺化",
+    #                            command=lambda: show_visualization(result_data))
+    #     visual_btn.pack(side="right", padx=5)
+
 
 def create_basic_tab(tab, result_data):
     """創建基本統計選項卡"""
@@ -147,7 +169,9 @@ def create_basic_tab(tab, result_data):
 
     # 原始磁場序列
     if "raw_analysis" in result_data:
-        tk.Label(tab, text="磁場序列", font=("Arial", 11, "bold")).pack(anchor="w", padx=5, pady=(15, 5))
+        tk.Label(tab, text="磁場序列", font=("Arial", 11, "bold")).pack(anchor="w",
+                                                                    padx=5,
+                                                                    pady=(15, 5))
 
         sequence_frame = tk.Frame(tab)
         sequence_frame.pack(fill="x", padx=10, pady=5)
@@ -157,11 +181,14 @@ def create_basic_tab(tab, result_data):
         sequence_text.config(state="disabled")
         sequence_text.pack(fill="x")
 
+
 def create_advanced_tab(tab, result_data):
     """創建進階分析選項卡"""
     # 調整日誌
     if "adjust_log" in result_data and result_data["adjust_log"]:
-        tk.Label(tab, text="進階調整規則應用", font=("Arial", 11, "bold")).pack(anchor="w", padx=5, pady=(10, 5))
+        tk.Label(tab, text="進階調整規則應用", font=("Arial", 11, "bold")).pack(anchor="w",
+                                                                        padx=5,
+                                                                        pady=(10, 5))
 
         log_frame = tk.Frame(tab)
         log_frame.pack(fill="x", padx=10, pady=5)
@@ -203,17 +230,26 @@ def create_advanced_tab(tab, result_data):
     stats_frame = tk.Frame(tab)
     stats_frame.pack(fill="x", padx=10, pady=5)
 
-    tk.Label(stats_frame, text=f"陽性磁場: {pos_count} ({pos_count/total_count*100:.1f}%)" if total_count else "陽性磁場: 0 (0%)",
-             width=25, anchor="w").grid(row=0, column=0, sticky="w", padx=5, pady=2)
-    tk.Label(stats_frame, text=f"陰性磁場: {neg_count} ({neg_count/total_count*100:.1f}%)" if total_count else "陰性磁場: 0 (0%)",
-             width=25, anchor="w").grid(row=0, column=1, sticky="w", padx=5, pady=2)
+    tk.Label(stats_frame,
+             text=f"陽性磁場: {pos_count} ({pos_count/total_count*100:.1f}%)"
+             if total_count else "陽性磁場: 0 (0%)",
+             width=25,
+             anchor="w").grid(row=0, column=0, sticky="w", padx=5, pady=2)
+    tk.Label(stats_frame,
+             text=f"陰性磁場: {neg_count} ({neg_count/total_count*100:.1f}%)"
+             if total_count else "陰性磁場: 0 (0%)",
+             width=25,
+             anchor="w").grid(row=0, column=1, sticky="w", padx=5, pady=2)
+
 
 def create_lucky_tab(tab, result_data):
     """創建幸運數字選項卡"""
     recommendations = result_data.get("recommendations", [])
 
     if recommendations:
-        tk.Label(tab, text="推薦幸運數字", font=("Arial", 11, "bold")).pack(anchor="w", padx=5, pady=(10, 5))
+        tk.Label(tab, text="推薦幸運數字", font=("Arial", 11, "bold")).pack(anchor="w",
+                                                                      padx=5,
+                                                                      pady=(10, 5))
 
         # 幸運數字列表
         lucky_frame = tk.Frame(tab)
@@ -235,15 +271,17 @@ def create_lucky_tab(tab, result_data):
             lucky_list.insert(tk.END, f"{i}. {num}")
 
         # 點選查看詳情功能
-        lucky_list.bind("<Double-1>", lambda e: show_number_detail(lucky_list.get(lucky_list.curselection())))
+        lucky_list.bind("<Double-1>",
+                        lambda e: show_number_detail(lucky_list.get(lucky_list.curselection())))
 
         # 生成更多按鈕
-        generate_btn = tk.Button(tab, text="生成更多幸運數字", command=lambda: generate_more_numbers(result_data))
+        generate_btn = tk.Button(tab,
+                                 text="生成更多幸運數字",
+                                 command=lambda: generate_more_numbers(result_data))
         generate_btn.pack(pady=10)
     else:
-        tk.Label(tab,
-                text="沒有可用的幸運數字推薦",
-                font=("Arial", 11)).pack(expand=True, pady=20)
+        tk.Label(tab, text="沒有可用的幸運數字推薦", font=("Arial", 11)).pack(expand=True, pady=20)
+
 
 def create_details_tab(tab, result_data):
     """創建磁場詳情選項卡"""
@@ -251,7 +289,9 @@ def create_details_tab(tab, result_data):
 
     if field_details:
         # 使用Treeview顯示磁場列表
-        tk.Label(tab, text="磁場詳細資訊", font=("Arial", 11, "bold")).pack(anchor="w", padx=5, pady=(10, 5))
+        tk.Label(tab, text="磁場詳細資訊", font=("Arial", 11, "bold")).pack(anchor="w",
+                                                                      padx=5,
+                                                                      pady=(10, 5))
 
         fields_frame = tk.Frame(tab)
         fields_frame.pack(fill="both", expand=True, padx=10, pady=5)
@@ -280,17 +320,17 @@ def create_details_tab(tab, result_data):
         tree.pack(side="left", fill="both", expand=True)
 
         # 點選查看詳情功能
-        tree.bind("<Double-1>", lambda e: show_field_details_popup(tree.item(tree.focus())["values"][0], field_details))
+        tree.bind(
+            "<Double-1>",
+            lambda e: show_field_details_popup(tree.item(tree.focus())["values"][0], field_details))
 
         # 說明文字
-        tk.Label(tab,
-                text="雙擊磁場可查看詳細資訊",
-                font=("Arial", 9),
-                fg="gray").pack(anchor="w", padx=10, pady=(0, 10))
+        tk.Label(tab, text="雙擊磁場可查看詳細資訊", font=("Arial", 9), fg="gray").pack(anchor="w",
+                                                                             padx=10,
+                                                                             pady=(0, 10))
     else:
-        tk.Label(tab,
-                text="沒有可用的磁場詳細資訊",
-                font=("Arial", 11)).pack(expand=True, pady=20)
+        tk.Label(tab, text="沒有可用的磁場詳細資訊", font=("Arial", 11)).pack(expand=True, pady=20)
+
 
 def show_field_details(frame, field_name, details):
     """顯示特定磁場的詳細資訊"""
@@ -299,11 +339,15 @@ def show_field_details(frame, field_name, details):
         widget.destroy()
 
     # 返回按鈕
-    back_btn = tk.Button(frame, text="返回結果概覽", command=lambda: frame.update_display(frame.last_result))
+    back_btn = tk.Button(frame,
+                         text="返回結果概覽",
+                         command=lambda: frame.update_display(frame.last_result))
     back_btn.pack(anchor="w", padx=10, pady=10)
 
     # 磁場標題
-    tk.Label(frame, text=f"{field_name} 磁場詳細資訊", font=("Arial", 14, "bold")).pack(anchor="w", padx=10, pady=(5, 15))
+    tk.Label(frame, text=f"{field_name} 磁場詳細資訊", font=("Arial", 14, "bold")).pack(anchor="w",
+                                                                                  padx=10,
+                                                                                  pady=(5, 15))
 
     # 關鍵字
     keywords = details.get("keywords", [])
@@ -315,19 +359,30 @@ def show_field_details(frame, field_name, details):
 
     # 優勢
     tk.Label(frame, text="優勢:", font=("Arial", 12, "bold")).pack(anchor="w", padx=10, pady=(10, 0))
-    tk.Label(frame, text=details.get("strengths", "無資料"), wraplength=400).pack(anchor="w", padx=20, pady=(0, 10))
+    tk.Label(frame, text=details.get("strengths", "無資料"), wraplength=400).pack(anchor="w",
+                                                                               padx=20,
+                                                                               pady=(0, 10))
 
     # 弱點
     tk.Label(frame, text="弱點:", font=("Arial", 12, "bold")).pack(anchor="w", padx=10, pady=(10, 0))
-    tk.Label(frame, text=details.get("weaknesses", "無資料"), wraplength=400).pack(anchor="w", padx=20, pady=(0, 10))
+    tk.Label(frame, text=details.get("weaknesses", "無資料"), wraplength=400).pack(anchor="w",
+                                                                                padx=20,
+                                                                                pady=(0, 10))
 
     # 財務建議
-    tk.Label(frame, text="財務建議:", font=("Arial", 12, "bold")).pack(anchor="w", padx=10, pady=(10, 0))
-    tk.Label(frame, text=details.get("financial_strategy", "無資料"), wraplength=400).pack(anchor="w", padx=20, pady=(0, 10))
+    tk.Label(frame, text="財務建議:", font=("Arial", 12, "bold")).pack(anchor="w",
+                                                                   padx=10,
+                                                                   pady=(10, 0))
+    tk.Label(frame, text=details.get("financial_strategy", "無資料"),
+             wraplength=400).pack(anchor="w", padx=20, pady=(0, 10))
 
     # 關係建議
-    tk.Label(frame, text="關係建議:", font=("Arial", 12, "bold")).pack(anchor="w", padx=10, pady=(10, 0))
-    tk.Label(frame, text=details.get("relationship_advice", "無資料"), wraplength=400).pack(anchor="w", padx=20, pady=(0, 10))
+    tk.Label(frame, text="關係建議:", font=("Arial", 12, "bold")).pack(anchor="w",
+                                                                   padx=10,
+                                                                   pady=(10, 0))
+    tk.Label(frame, text=details.get("relationship_advice", "無資料"),
+             wraplength=400).pack(anchor="w", padx=20, pady=(0, 10))
+
 
 def show_lucky_numbers(frame, result_data):
     """顯示幸運數字列表"""
@@ -336,11 +391,15 @@ def show_lucky_numbers(frame, result_data):
         widget.destroy()
 
     # 返回按鈕
-    back_btn = tk.Button(frame, text="返回結果概覽", command=lambda: frame.update_display(frame.last_result))
+    back_btn = tk.Button(frame,
+                         text="返回結果概覽",
+                         command=lambda: frame.update_display(frame.last_result))
     back_btn.pack(anchor="w", padx=10, pady=10)
 
     # 幸運數字標題
-    tk.Label(frame, text="推薦幸運數字", font=("Arial", 14, "bold")).pack(anchor="w", padx=10, pady=(5, 15))
+    tk.Label(frame, text="推薦幸運數字", font=("Arial", 14, "bold")).pack(anchor="w",
+                                                                    padx=10,
+                                                                    pady=(5, 15))
 
     recommendations = result_data.get("recommendations", [])
     if not recommendations:
@@ -352,10 +411,8 @@ def show_lucky_numbers(frame, result_data):
     scrollbar = tk.Scrollbar(frame, orient="vertical", command=canvas.yview)
     scrollable_frame = tk.Frame(canvas)
 
-    scrollable_frame.bind(
-        "<Configure>",
-        lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-    )
+    scrollable_frame.bind("<Configure>",
+                          lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
     canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
     canvas.configure(yscrollcommand=scrollbar.set)
@@ -373,12 +430,15 @@ def show_lucky_numbers(frame, result_data):
         copy_btn.pack(anchor="e")
 
     # 生成更多按鈕
-    generate_btn = tk.Button(frame, text="生成更多幸運數字", command=lambda: generate_more_numbers(result_data))
+    generate_btn = tk.Button(frame,
+                             text="生成更多幸運數字",
+                             command=lambda: generate_more_numbers(result_data))
     generate_btn.pack(pady=10)
 
     # 佈局滾動區域
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
+
 
 def show_field_details_popup(field_name, field_details):
     """在彈出窗口中顯示磁場詳細資訊"""
@@ -404,22 +464,33 @@ def show_field_details_popup(field_name, field_details):
 
     # 優勢
     tk.Label(popup, text="優勢:", font=("Arial", 12, "bold")).pack(anchor="w", padx=20, pady=(10, 0))
-    tk.Label(popup, text=details.get("strengths", "無資料"), wraplength=400).pack(anchor="w", padx=30, pady=(0, 10))
+    tk.Label(popup, text=details.get("strengths", "無資料"), wraplength=400).pack(anchor="w",
+                                                                               padx=30,
+                                                                               pady=(0, 10))
 
     # 弱點
     tk.Label(popup, text="弱點:", font=("Arial", 12, "bold")).pack(anchor="w", padx=20, pady=(10, 0))
-    tk.Label(popup, text=details.get("weaknesses", "無資料"), wraplength=400).pack(anchor="w", padx=30, pady=(0, 10))
+    tk.Label(popup, text=details.get("weaknesses", "無資料"), wraplength=400).pack(anchor="w",
+                                                                                padx=30,
+                                                                                pady=(0, 10))
 
     # 財務建議
-    tk.Label(popup, text="財務建議:", font=("Arial", 12, "bold")).pack(anchor="w", padx=20, pady=(10, 0))
-    tk.Label(popup, text=details.get("financial_strategy", "無資料"), wraplength=400).pack(anchor="w", padx=30, pady=(0, 10))
+    tk.Label(popup, text="財務建議:", font=("Arial", 12, "bold")).pack(anchor="w",
+                                                                   padx=20,
+                                                                   pady=(10, 0))
+    tk.Label(popup, text=details.get("financial_strategy", "無資料"),
+             wraplength=400).pack(anchor="w", padx=30, pady=(0, 10))
 
     # 關係建議
-    tk.Label(popup, text="關係建議:", font=("Arial", 12, "bold")).pack(anchor="w", padx=20, pady=(10, 0))
-    tk.Label(popup, text=details.get("relationship_advice", "無資料"), wraplength=400).pack(anchor="w", padx=30, pady=(0, 10))
+    tk.Label(popup, text="關係建議:", font=("Arial", 12, "bold")).pack(anchor="w",
+                                                                   padx=20,
+                                                                   pady=(10, 0))
+    tk.Label(popup, text=details.get("relationship_advice", "無資料"),
+             wraplength=400).pack(anchor="w", padx=30, pady=(0, 10))
 
     # 確認按鈕
     tk.Button(popup, text="確定", command=popup.destroy).pack(pady=20)
+
 
 def show_number_detail(number_text):
     """顯示幸運數字詳細分析"""
@@ -456,12 +527,11 @@ def show_number_detail(number_text):
     tk.Label(popup, text="磁場組合", font=("Arial", 12, "bold")).pack(anchor="w", padx=20, pady=(10, 5))
 
     # 這裡應該調用數字分析引擎的函數來分析數字，這裡只是簡單示例
-    tk.Label(popup,
-            text="此數字通常由有利的天醫、生氣和延年磁場組成",
-            wraplength=350).pack(anchor="w", padx=30)
+    tk.Label(popup, text="此數字通常由有利的天醫、生氣和延年磁場組成", wraplength=350).pack(anchor="w", padx=30)
 
     # 複製按鈕
     tk.Button(popup, text="複製到剪貼簿", command=lambda: copy_to_clipboard(number)).pack(pady=15)
+
 
 def copy_to_clipboard(text):
     """複製文本到剪貼簿"""
@@ -477,6 +547,7 @@ def copy_to_clipboard(text):
     except Exception as e:
         logger.error(f"複製到剪貼簿失敗: {e}")
         messagebox.showerror("錯誤", f"複製失敗: {e}")
+
 
 def save_result(result_data):
     """保存分析結果"""
@@ -495,6 +566,7 @@ def save_result(result_data):
         logger.error(f"保存結果失敗: {e}")
         messagebox.showerror("錯誤", f"保存失敗: {e}")
 
+
 def export_report(result_data):
     """匯出分析報告"""
     try:
@@ -502,11 +574,9 @@ def export_report(result_data):
         from controller.result_controller import ResultController
 
         # 選擇保存路徑
-        filepath = filedialog.asksaveasfilename(
-            defaultextension=".txt",
-            filetypes=[("文本文件", "*.txt"), ("JSON文件", "*.json")],
-            title="保存分析報告"
-        )
+        filepath = filedialog.asksaveasfilename(defaultextension=".txt",
+                                                filetypes=[("文本文件", "*.txt"), ("JSON文件", "*.json")],
+                                                title="保存分析報告")
 
         if not filepath:
             return
@@ -523,6 +593,7 @@ def export_report(result_data):
     except Exception as e:
         logger.error(f"匯出報告失敗: {e}")
         messagebox.showerror("錯誤", f"匯出失敗: {e}")
+
 
 def show_visualization(result_data):
     """顯示磁場能量視覺化"""
@@ -541,6 +612,7 @@ def show_visualization(result_data):
         logger.error(f"顯示視覺化失敗: {e}")
         messagebox.showerror("錯誤", f"無法顯示視覺化: {e}")
 
+
 def generate_more_numbers(result_data):
     """生成更多幸運數字"""
     try:
@@ -549,7 +621,11 @@ def generate_more_numbers(result_data):
         from tkinter import simpledialog
 
         # 詢問要生成的數量
-        count = simpledialog.askinteger("輸入", "請輸入要生成的幸運數字數量:", initialvalue=5, minvalue=1, maxvalue=20)
+        count = simpledialog.askinteger("輸入",
+                                        "請輸入要生成的幸運數字數量:",
+                                        initialvalue=5,
+                                        minvalue=1,
+                                        maxvalue=20)
 
         if not count:
             return
@@ -576,21 +652,15 @@ def generate_more_numbers(result_data):
             messagebox.showinfo("成功", f"已生成 {len(new_numbers)} 個新的幸運數字")
 
             # 刷新顯示
-            if hasattr(tk._default_root, 'result_frame') and hasattr(tk._default_root.result_frame, 'update_display'):
+            if hasattr(tk._default_root, 'result_frame') and hasattr(tk._default_root.result_frame,
+                                                                     'update_display'):
                 tk._default_root.result_frame.update_display(result_data)
     except Exception as e:
         logger.error(f"生成更多幸運數字失敗: {e}")
         messagebox.showerror("錯誤", f"生成失敗: {e}")
 
-# 測試代碼
-if __name__ == "__main__":
-    # 設定日誌級別
-    logging.basicConfig(level=logging.DEBUG)
 
-    # 創建測試窗口
-    root = tk.Tk()
-    root.title("結果顯示模組測試")
-    root.geometry("800x600")
+def make_result_view(root):
 
     # 創建結果框架
     result_frame = create_result_frame(root)
@@ -616,21 +686,8 @@ if __name__ == "__main__":
             "延年": 1,
             "伏位": 1
         },
-        "adjust_log": [
-            "(天醫-0)",
-            "(絕命-1)",
-            "(延年-0)",
-            "(六煞-1)",
-            "(生氣-0) (伏位-0) (禍害-1)",
-            "(五鬼-1)"
-        ],
-        "recommendations": [
-            "1368",
-            "3146",
-            "6872",
-            "1394",
-            "6749"
-        ],
+        "adjust_log": ["(天醫-0)", "(絕命-1)", "(延年-0)", "(六煞-1)", "(生氣-0) (伏位-0) (禍害-1)", "(五鬼-1)"],
+        "recommendations": ["1368", "3146", "6872", "1394", "6749"],
         "field_details": {
             "天醫": {
                 "count": 1,
@@ -681,7 +738,8 @@ if __name__ == "__main__":
         if hasattr(result_frame, 'last_result'):
             field_name = tk.simpledialog.askstring("輸入", "請輸入要查看的磁場名稱:")
             if field_name and field_name in result_frame.last_result.get('field_details', {}):
-                result_frame.show_field_details(field_name, result_frame.last_result['field_details'][field_name])
+                result_frame.show_field_details(
+                    field_name, result_frame.last_result['field_details'][field_name])
             else:
                 tk.messagebox.showwarning("警告", "找不到該磁場的詳細資訊")
 
@@ -692,6 +750,19 @@ if __name__ == "__main__":
     tk.Button(button_frame, text="載入測試資料", command=load_test_data).pack(side="left", padx=5)
     tk.Button(button_frame, text="查看磁場詳情", command=show_field).pack(side="left", padx=5)
     tk.Button(button_frame, text="查看幸運數字", command=show_numbers).pack(side="left", padx=5)
+
+
+# 測試代碼
+if __name__ == "__main__":
+    # 設定日誌級別
+    logging.basicConfig(level=logging.DEBUG)
+
+    # 創建測試窗口
+    root = tk.Tk()
+    root.title("結果顯示模組測試")
+    root.geometry("800x600")
+
+    make_result_view(root)
 
     # 運行主循環
     root.mainloop()
