@@ -194,7 +194,7 @@ def create_input_frame(root, result_frame):
     load_settings()  # 開啟時自動載入設定
 
     row = 0
-    tk.Checkbutton(frame, text="姓名：", variable=use_name).grid(row=row, column=0, sticky="w")
+    tk.Checkbutton(frame, text="中文姓名：", variable=use_name).grid(row=row, column=0, sticky="w")
     tk.Entry(frame, textvariable=name_var, width=20).grid(row=row,
                                                           column=1,
                                                           columnspan=3,
