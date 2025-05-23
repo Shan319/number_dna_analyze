@@ -16,9 +16,13 @@ def create_input_frame(root, result_frame):
     # ===== 基本輸入欄位 =====
     name_var = tk.StringVar()
     id_var = tk.StringVar()
-    custom_var = tk.StringVar()
+    phone_var = tk.StringVar()
+    birth_var = tk.StringVar()
+    custom_var = tk.StringVar() #  英數混合
     use_name = tk.BooleanVar()
     use_id = tk.BooleanVar()
+    use_phone = tk.BooleanVar()
+    use_birth = tk.BooleanVar()
     use_custom = tk.BooleanVar()
 
     def on_analyze_click():  #  點擊「分析」按鈕，執行on_analyze_click函數
@@ -30,7 +34,7 @@ def create_input_frame(root, result_frame):
 
         # 收集輸入資料 (傳入所有設定變量)
         data = collect_input_data(
-            name_var, id_var, custom_var, use_name, use_id, use_custom,
+            name_var, id_var, phone_var, birth_var,custom_var, use_name, use_id,use_phone,use_birth, use_custom,
             digit_var, custom_digit_var, mixed_var, english_position_var,
             fixed_eng_var, fixed_num_var, default_vars, other_vars
         )# 收集輸入資料
@@ -96,6 +100,10 @@ def create_input_frame(root, result_frame):
         name_var.set("")
         id_var.set("")
         custom_var.set("")
+        phone_var.set("")
+        birth_var.set("")
+        use_phone.set(False)
+        use_birth.set(False)
         use_name.set(False)
         use_id.set(False)
         use_custom.set(False)
@@ -201,15 +209,20 @@ def create_input_frame(root, result_frame):
                                                           sticky="w")
 
     row += 1
-    tk.Checkbutton(frame, text="身分證：", variable=use_id).grid(row=row, column=0, sticky="w")
+    tk.Checkbutton(frame, text="身分證號碼：", variable=use_id).grid(row=row, column=0, sticky="w")
     tk.Entry(frame, textvariable=id_var, width=20).grid(row=row, column=1, columnspan=3, sticky="w")
 
     row += 1
-    tk.Checkbutton(frame, text="自定義：", variable=use_custom).grid(row=row, column=0, sticky="w")
-    tk.Entry(frame, textvariable=custom_var, width=20).grid(row=row,
-                                                            column=1,
-                                                            columnspan=3,
-                                                            sticky="w")
+    tk.Checkbutton(frame, text="手機（格式 09xxxxxxxx）：",variable= use_phone).grid(row=row, column=0, sticky="w")
+    tk.Entry(frame, textvariable=phone_var, width=20).grid(row=row, column=1, columnspan=3, sticky="w")
+
+    row += 1
+    tk.Checkbutton(frame, text="生日（格式 yyyy/mm/dd）：",variable= use_birth).grid(row=row, column=0, sticky="w")
+    tk.Entry(frame, textvariable=birth_var, width=20).grid(row=row, column=1, columnspan=3, sticky="w")
+
+    row += 1
+    tk.Checkbutton(frame, text="英數混合：", variable=use_custom).grid(row=row, column=0, sticky="w")
+    tk.Entry(frame, textvariable=custom_var, width=20).grid(row=row,column=1,columnspan=3,sticky="w")
 
     # ===== 插入設定條件模組 =====
     row += 1

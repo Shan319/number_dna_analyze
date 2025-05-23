@@ -14,7 +14,7 @@ from utils.validators import validate_all
 # 設定日誌記錄器
 logger = logging.getLogger("數字DNA分析器.InputController")
 
-def collect_input_data(name_var, id_var, custom_var, use_name, use_id, use_custom,
+def collect_input_data(name_var, id_var, phone_var, birth_var,custom_var, use_name, use_id,use_phone,use_birth, use_custom,
                        digit_var=None, custom_digit_var=None, mixed_var=None,
                        english_position_var=None, fixed_eng_var=None, fixed_num_var=None,
                        default_vars=None, other_vars=None):
@@ -28,6 +28,10 @@ def collect_input_data(name_var, id_var, custom_var, use_name, use_id, use_custo
         input_data["name"] = name_var.get().strip()
     if use_id.get():
         input_data["id"] = id_var.get().strip()
+    if use_phone.get():
+        input_data["phone"] = phone_var.get().strip()
+    if use_birth.get():
+        input_data["birth"] = birth_var.get().strip()
     if use_custom.get():
         input_data["custom"] = custom_var.get().strip()
 
@@ -93,8 +97,9 @@ def validate_input(input_data):
     errors = []
 
     # 檢查是否有至少一個輸入
-    if not any(key in input_data for key in ["name", "id", "custom"]):
-        errors.append("請至少選擇一種輸入類型（姓名、身分證或自定義）")
+    if not any(key in input_data for key in ["name", "id", "phone", "birth", "custom"]):
+        errors.append("請至少選擇一種輸入類型（姓名、身分證、手機、生日、英數混合）")
+
 
     # 使用validate_all添加其他常規檢查
     errors.extend(validate_all(input_data))
