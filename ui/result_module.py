@@ -10,7 +10,7 @@
 4. 提供保存/載入分析結果的界面
 5. 支援不同顯示模式的切換
 """
-
+from collections import Counter
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -512,7 +512,7 @@ def show_number_detail(number_text):
     tk.Label(popup, text=number, font=("Courier", 24, "bold")).pack(pady=(20, 10))
 
     # 數位分析
-    tk.Label(popup, text="數位分析", font=("Arial", 12, "bold")).pack(anchor="w", padx=20, pady=(10, 5))
+    tk.Label(popup, text="磁場分析", font=("Arial", 12, "bold")).pack(anchor="w", padx=20, pady=(10, 5))
 
     digit_frame = tk.Frame(popup)
     digit_frame.pack(fill="x", padx=20, pady=5)
@@ -521,20 +521,11 @@ def show_number_detail(number_text):
     result = analyze_input(number)
     tk.Label(digit_frame, text=f"磁場組合：{result} ", anchor="w").pack(anchor="w")
     
-    for field, count in result.items():
+    result_key = result.split()
+    base_counts = Counter(result_key)
+    for field, count in base_counts.items():
         keywords = "、".join(keyword_fields.get(field, []))  # 取得關鍵字集合並轉成字串
         tk.Label(digit_frame, text=f"{field}：{keywords} ", anchor="w").pack(anchor="w")
-    
-    digit_counts = {}
-    for digit in number:
-        if digit.isdigit():
-            digit_counts[digit] = digit_counts.get(digit, 0) + 1
-
-    for digit, count in sorted(digit_counts.items()):
-        tk.Label(digit_frame, text=f"數字 {digit}: 出現 {count} 次", anchor="w").pack(anchor="w")
-
-    # 磁場分析（模擬，實際應該調用分析函數）
-    tk.Label(popup, text="磁場組合", font=("Arial", 12, "bold")).pack(anchor="w", padx=20, pady=(10, 5))
 
     # 這裡應該調用數字分析引擎的函數來分析數字，這裡只是簡單示例
     tk.Label(popup, text="此數字通常由有利的天醫、生氣和延年磁場組成", wraplength=350).pack(anchor="w", padx=30)
