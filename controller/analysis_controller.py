@@ -53,7 +53,7 @@ def analyze(input_data):
             if input_data.get("mix_mode", False):
                 raw_result = analyze_mixed_input(input_data["custom"])
             else:
-                raw_result = analyze_input(input_data["custom"])
+                raw_result = analyze_mixed_input(input_data["custom"])
         else:
             result["messages"].append("未提供有效的輸入數據")
             return result
