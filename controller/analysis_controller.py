@@ -49,7 +49,10 @@ def analyze(input_data):
             raw_result = analyze_input(input_data["id"], is_id=True)
         elif "birth" in input_data and input_data["birth"]:
             result["input_type"] = "生日"
-            raw_result = analyze_input((input_data["birth"]).replace("/", ""))    
+            raw_result = analyze_input((input_data["birth"]).replace("/", ""))
+        elif "phone" in input_data and input_data["phone"]:
+            result["input_type"] = "手機號碼"
+            raw_result = analyze_input(input_data["phone"])     
         elif "custom" in input_data and input_data["custom"]:
             # 處理自定義輸入 - 根據混合模式決定分析方法
             result["input_type"] = "自定義"
