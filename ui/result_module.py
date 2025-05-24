@@ -17,6 +17,9 @@ import logging
 import os
 from functools import partial
 
+from core.field_analyzer import analyze_input, analyze_name_strokes, analyze_mixed_input
+from core.number_analyzer import keyword_fields, magnetic_fields, analyze_magnetic_fields
+
 # 設定日誌記錄器
 logger = logging.getLogger("數字DNA分析器.ResultModule")
 
@@ -515,6 +518,13 @@ def show_number_detail(number_text):
     digit_frame.pack(fill="x", padx=20, pady=5)
 
     # 分析每個數字出現的次數
+    result = analyze_input(number)
+    tk.Label(digit_frame, text=f"磁場組合：{result} ", anchor="w").pack(anchor="w")
+    
+    for field, count in result.items():
+        keywords = "、".join(keyword_fields.get(field, []))  # 取得關鍵字集合並轉成字串
+        tk.Label(digit_frame, text=f"{field}：{keywords} ", anchor="w").pack(anchor="w")
+    
     digit_counts = {}
     for digit in number:
         if digit.isdigit():
