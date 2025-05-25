@@ -113,7 +113,7 @@ class ResultController:
 
             # 如果沒有提供檔案名稱，則自動生成
             if not filename:
-                filename = f"{input_type}_{timestamp}.json"
+                filename = f"{timestamp}.json"
 
             # 確保檔案名稱有.json副檔名
             if not filename.endswith('.json'):

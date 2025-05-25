@@ -1,13 +1,14 @@
 # ui/main_window.py
 import tkinter as tk
 from ui.input_module import create_input_frame
+from ui.history_module import HistoryView
 from ui.result_module import create_result_content
 
 
 def main():
     root = tk.Tk()
     root.title("數字DNA分析器")
-    root.geometry("1000x600")
+    root.geometry("1000x700")
     root.config(bg="#fefae0")
 
     # ===== 標題區 =====
@@ -32,6 +33,10 @@ def main():
     # 傳 result_frame 給輸入模組（用於顯示分析結果）
     input_frame = create_input_frame(left_frame, right_frame)
     input_frame.pack(padx=10, pady=10, fill="x")
+
+    history_view = HistoryView(left_frame, right_frame)
+    history_frame = history_view.frame
+    history_frame.pack(padx=10, pady=10, fill="x")
 
     root.mainloop()
 
