@@ -87,7 +87,7 @@ def analyze_magnetic_fields(input_list):
             adjust_log.append(f"(六煞-{cancel_count})")
 
         # 規則 3：固定對組合 -> 抵一個禍害
-        group_pairs = [("天醫", "天醫"), ("天醫", "延年"), ("生氣", "伏位"), ("延年", "生氣")]
+        group_pairs = [("生氣", "生氣"), ("生氣", "延年"), ("生氣", "伏位"), ("延年", "生氣")]
         i = 0
         used_indexes = set()
         while i < len(input_list) - 1:
