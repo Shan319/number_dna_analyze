@@ -30,12 +30,14 @@ def main():
     result_frame = create_result_content(right_frame, None)
     result_frame.pack(expand=True, fill="both", padx=10, pady=10)
 
-    # 傳 result_frame 給輸入模組（用於顯示分析結果）
-    input_frame = create_input_frame(left_frame, right_frame)
-    input_frame.pack(padx=10, pady=10, fill="x")
-
+    # 歷史紀錄區域
     history_view = HistoryView(left_frame, right_frame)
     history_frame = history_view.frame
+
+    # 傳 result_frame 給輸入模組（用於顯示分析結果）
+    input_frame = create_input_frame(left_frame, right_frame, history_view.update_history_data)
+    input_frame.pack(padx=10, pady=10, fill="x")
+
     history_frame.pack(padx=10, pady=10, fill="x")
 
     root.mainloop()

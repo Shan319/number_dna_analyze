@@ -87,6 +87,7 @@ class HistoryView:
 
         # 讀取指定資料夾下的所有檔案
         files = os.listdir(HISTORY_PATH)
+        files.sort(reverse=True)
         for file_name in files:
             full_path = os.path.join(HISTORY_PATH, file_name)
 

@@ -2,6 +2,7 @@
 
 import os
 import json
+from typing import Callable
 
 import tkinter as tk
 from tkinter import messagebox
@@ -13,7 +14,7 @@ from ui.settings_module import create_settings_frame
 from ui.result_module import create_result_content
 
 
-def create_input_frame(parent: tk.Frame, right_frame: tk.Frame):
+def create_input_frame(parent: tk.Frame, right_frame: tk.Frame, history_update_cb: Callable):
     frame = tk.LabelFrame(parent, text="輸入區", font=("Arial", 14))
 
     # ===== 基本輸入欄位 =====
@@ -66,6 +67,8 @@ def create_input_frame(parent: tk.Frame, right_frame: tk.Frame):
         result_controller.process_result(result_data=result,
                                          input_data=data,
                                          display_callback=display_result)
+
+        history_update_cb()
         # result_controller.process_result(result_data=result,
         #                                  input_data=data,
         #                                  display_callback=create_result_frame)
