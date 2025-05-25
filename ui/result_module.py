@@ -12,7 +12,7 @@
 """
 from collections import Counter
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog, filedialog
 import logging
 import os
 from functools import partial
@@ -29,7 +29,7 @@ def create_result_content(parent: tk.Frame, result_data):
     創建結果顯示框架
 
     Args:
-        parent: 容器
+        parent frame
 
     Returns:
         frame: 結果顯示框架
@@ -59,7 +59,7 @@ def create_result_frame(parent):
     創建結果顯示框架
 
     Args:
-        parent: 容器
+        parent frame
 
     Returns:
         frame: 結果顯示框架
@@ -247,6 +247,10 @@ def create_advanced_tab(tab, result_data):
 
 def create_lucky_tab(tab, result_data):
     """創建幸運數字選項卡"""
+    # 清空現有內容（用於更新時）
+    for widget in tab.winfo_children():
+        widget.destroy()
+
     recommendations = result_data.get("recommendations", [])
 
     if recommendations:
@@ -277,11 +281,21 @@ def create_lucky_tab(tab, result_data):
         lucky_list.bind("<Double-1>",
                         lambda e: show_number_detail(lucky_list.get(lucky_list.curselection())))
 
-        # 生成更多按鈕
+        # 支援更新推薦數字生成
+        def refresh_numbers():
+            new_data = generate_more_numbers_and_update(result_data)
+            if new_data:
+                create_lucky_tab(tab, new_data)  # 遞歸重新創建
+
         generate_btn = tk.Button(tab,
                                  text="生成更多幸運數字",
-                                 command=lambda: generate_more_numbers(result_data))
+                                 command=refresh_numbers)
         generate_btn.pack(pady=10)
+        # # 生成更多推薦數字的按鈕
+        # generate_btn = tk.Button(tab,
+        #                          text="生成更多幸運數字",
+        #                          command=lambda: generate_more_numbers_and_update(result_data))
+        # generate_btn.pack(pady=10)
     else:
         tk.Label(tab, text="沒有可用的幸運數字推薦", font=("Arial", 11)).pack(expand=True, pady=20)
 
@@ -432,10 +446,10 @@ def show_lucky_numbers(frame, result_data):
         copy_btn = tk.Button(num_frame, text="複製", command=lambda n=num: copy_to_clipboard(n))
         copy_btn.pack(anchor="e")
 
-    # 生成更多按鈕
+    # 生成更多推薦數字的按鈕
     generate_btn = tk.Button(frame,
                              text="生成更多幸運數字",
-                             command=lambda: generate_more_numbers(result_data))
+                             command=lambda: generate_more_numbers_and_update(result_data))
     generate_btn.pack(pady=10)
 
     # 佈局滾動區域
@@ -520,7 +534,7 @@ def show_number_detail(number_text):
     # 分析幸運數字的磁場組合
     result = analyze_input(number)
     tk.Label(digit_frame, text=f"磁場組合：{result} ", anchor="w").pack(anchor="w")
-    
+
     result_key = result.split()
     base_counts = Counter(result_key)
     for field, count in base_counts.items():
@@ -571,7 +585,7 @@ def save_result(result_data):
 def export_report(result_data):
     """匯出分析報告"""
     try:
-        from tkinter import filedialog
+        # from tkinter import filedialog
         from controller.result_controller import ResultController
 
         # 選擇保存路徑
@@ -614,12 +628,12 @@ def show_visualization(result_data):
         messagebox.showerror("錯誤", f"無法顯示視覺化: {e}")
 
 
-def generate_more_numbers(result_data):
-    """生成更多幸運數字"""
+def generate_more_numbers_and_update(result_data, update_callback=None):
+    """生成更多推薦數字並更新數據和UI"""
     try:
-        # 這裡應該調用分析控制器來生成更多幸運數字
+        # 調用分析控制器來生成更多幸運數字
         from controller.analysis_controller import generate_lucky_numbers
-        from tkinter import simpledialog
+        # from tkinter import simpledialog
 
         # 詢問要生成的數量
         count = simpledialog.askinteger("輸入",
@@ -634,13 +648,18 @@ def generate_more_numbers(result_data):
         # 獲取當前的磁場計數
         adjusted_counts = result_data.get("adjusted_counts", {})
 
-        # 獲取當前的數字長度
-        digit_length = result_data.get("digit_length", 4)
-        if not isinstance(digit_length, int):
-            try:
-                digit_length = int(digit_length)
-            except:
-                digit_length = 4
+        # 更新用_獲取當前的數字長度_從現有推薦數字推斷
+        existing_recommendations = result_data.get("recommendations", [])
+        if existing_recommendations:
+            digit_length = len(str(existing_recommendations[0]))
+        else:
+            #初始設定從 result_data 獲取
+            digit_length = result_data.get("digit_length", 4)
+            if not isinstance(digit_length, int):
+                try:
+                    digit_length = int(digit_length)
+                except:
+                    digit_length = 4
 
         # 生成新的幸運數字
         new_numbers = generate_lucky_numbers(adjusted_counts, digit_length, count)
@@ -649,16 +668,30 @@ def generate_more_numbers(result_data):
             # 更新結果數據
             result_data["recommendations"] = new_numbers
 
-            # 顯示新的結果
+            # 顯示更新成功
             messagebox.showinfo("成功", f"已生成 {len(new_numbers)} 個新的幸運數字")
 
-            # 刷新顯示
-            if hasattr(tk._default_root, 'result_frame') and hasattr(tk._default_root.result_frame,
-                                                                     'update_display'):
-                tk._default_root.result_frame.update_display(result_data)
+            # 刷新顯示_找到當前的parent並重新創建內容
+            if update_callback:
+                update_callback(result_data)
+            else:
+                root = tk._default_root
+                if hasattr(root, 'current_notebook'):
+                    notebook = root.current_notebook
+                    # 找到幸運數字選項卡並重新創建
+                    for i in range(notebook.index("end")):
+                        if notebook.tab(i, "text") == "幸運數字":
+                            # 清空該選項卡
+                            tab_frame = notebook.nametowidget(notebook.tabs()[i])
+                            for widget in tab_frame.winfo_children():
+                                widget.destroy()
+                            # 重新創建內容
+                            create_lucky_tab(tab_frame, result_data)
+                            break
     except Exception as e:
         logger.error(f"生成更多幸運數字失敗: {e}")
         messagebox.showerror("錯誤", f"生成失敗: {e}")
+    return None
 
 
 def make_result_view(root):
