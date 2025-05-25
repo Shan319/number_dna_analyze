@@ -125,5 +125,7 @@ class HistoryView:
             date = history_data.date
             raw = history_data.raw
             date_string = date.strftime("%Y/%m/%d %H:%M:%S")
-            contents = raw.get("input_type")
+            input_type = raw.get("input_type")
+            input_value = raw.get("input_value", "")
+            contents = f"{input_type} {input_value}"
             self.tree.insert("", "end", values=(date_string, contents))
