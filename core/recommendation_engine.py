@@ -3,11 +3,12 @@ import random
 
 # 每種磁場對應的兩位數字組合
 magneticic_pairs = {
-    "伏位": ["11", "22", "33", "44", "66", "77", "88", "99"],
+    "伏位": ["00", "11", "22", "33", "44", "66", "77", "88", "99"],
     "生氣": ["14", "41", "67", "76", "39", "93", "28", "82"],
     "天醫": ["13", "31", "68", "86", "49", "94", "27", "72"],
     "延年": ["19", "91", "78", "87", "34", "43", "26", "62"]
 }
+
 
 # 用於磁場抵銷的原始函式
 def generate_lucky_numbers(magnetic_fields):
@@ -39,6 +40,7 @@ def generate_lucky_numbers(magnetic_fields):
         neg_fields["禍害"] -= 1
 
     return cancel_fields
+
 
 def generate_lucky_number_chain_by_cancel_fields(cancel_fields, length):
     num_fields = length - 1
@@ -171,4 +173,3 @@ def generate_multiple_lucky_numbers(magnetic_input, length, count=15):
         lucky = generate_lucky_number_chain_by_cancel_fields(cancel, length)
         results.append(lucky)
     return results
-

@@ -55,6 +55,13 @@ def collect_input_data(name_var, id_var, phone_var, birth_var,custom_var, use_na
     input_data["default_conditions"] = {k: v.get() for k, v in default_vars.items()} if default_vars is not None else {}
     input_data["other_conditions"] = {k: v.get() for k, v in other_vars.items()} if other_vars is not None else {}
 
+    # 驗證是否有勾選輸入選項
+    from controller.analysis_controller import validate_analysis_input
+    is_valid, errors = validate_analysis_input(input_data)
+    if not is_valid:
+        # 處理驗證錯誤
+        pass
+
     return input_data
 
 # def collect_input_data(name_var, id_var, custom_var, use_name, use_id, use_custom):
