@@ -517,7 +517,7 @@ def show_number_detail(number_text):
     digit_frame = tk.Frame(popup)
     digit_frame.pack(fill="x", padx=20, pady=5)
 
-    # 分析每個數字出現的次數
+    # 分析幸運數字的磁場組合
     result = analyze_input(number)
     tk.Label(digit_frame, text=f"磁場組合：{result} ", anchor="w").pack(anchor="w")
     
