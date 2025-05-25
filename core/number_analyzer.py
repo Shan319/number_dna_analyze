@@ -163,23 +163,6 @@ if __name__ == "__main__":
         keywords = "、".join(keyword_fields.get(field, []))
         print(f"{field}：{count}（{keywords}）")
 
-    # 額外年齡輸出（身分證字號專屬)
-    if input_type == "身分證字號":
-        print("\n[歲數對應磁場]")
-        total = len(input_list)
-        age_start = 0
-        first = True
-        for idx, field in enumerate(input_list):
-            if first:
-                age_end = 10
-                first = False
-            elif idx == total - 1:
-                print(f"{age_start}~70(歲) {field}")
-                break
-            else:
-                age_end = age_start + 5
-            print(f"{age_start}~{age_end}(歲) {field}")
-            age_start = age_end
 
     # 輸出調整結果
     print("\n[進階計算調整]")
