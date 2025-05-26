@@ -219,7 +219,7 @@ def create_advanced_tab(tab, result_data):
             col = 0
             row += 1
 
-    # 陽性/陰性磁場統計
+    # 磁場吉凶統計
     pos_fields = ['天醫', '生氣', '延年', '伏位']
     neg_fields = ['五鬼', '六煞', '禍害', '絕命']
 
@@ -234,13 +234,13 @@ def create_advanced_tab(tab, result_data):
     stats_frame.pack(fill="x", padx=10, pady=5)
 
     tk.Label(stats_frame,
-             text=f"陽性磁場: {pos_count} ({pos_count/total_count*100:.1f}%)"
-             if total_count else "陽性磁場: 0 (0%)",
+             text=f"吉星磁場: {pos_count} ({pos_count/total_count*100:.1f}%)"
+             if total_count else "吉星磁場: 0 (0%)",
              width=25,
              anchor="w").grid(row=0, column=0, sticky="w", padx=5, pady=2)
     tk.Label(stats_frame,
-             text=f"陰性磁場: {neg_count} ({neg_count/total_count*100:.1f}%)"
-             if total_count else "陰性磁場: 0 (0%)",
+             text=f"凶星磁場: {neg_count} ({neg_count/total_count*100:.1f}%)"
+             if total_count else "凶星磁場: 0 (0%)",
              width=25,
              anchor="w").grid(row=0, column=1, sticky="w", padx=5, pady=2)
 
