@@ -52,19 +52,30 @@ class HistoryView:
         self.tree.config(yscrollcommand=scrollbar.set)
         self.tree.pack(fill="both", expand=True)
 
-        # click 後更新右側結果
+        self.context_menu = tk.Menu(self.frame, tearoff=0)
+        self.context_menu.add_command(label="刪除", command=self.delete_selected)
+
+        # 左鍵點擊後更新右側結果
         self.tree.bind('<Button-1>', self.on_single_click)
+        # 右鍵點擊後顯示選單
+        self.tree.bind("<Button-3>", self.show_context_menu)
 
         # 載入歷史資料
         self.history: list[HistoryData] = []
         self.update_history_data()
 
-    def display_result(self, result_data: dict):
+    def get_index(self, item: str):
+        """回覆該 item 是第幾筆資料"""
+        all_items = self.tree.get_children()
+        index = all_items.index(item)
+        return index
+
+    def display_result(self, result_data: dict | None):
         """
         更新右側結果
 
         Parameters:
-            result_data (dict): 用來更新右側結果的資料
+            result_data (dict | None): 用來更新右側結果的資料
         """
         # 清空現有內容
         for widget in self.right_frame.winfo_children():
@@ -75,14 +86,51 @@ class HistoryView:
 
     def on_single_click(self, event: tk.Event):
         """單擊事件"""
+        # 取得滑鼠所在位置對應的 item
         item = self.tree.identify_row(event.y)
         if item:
-            all_items = self.tree.get_children()
-            index = all_items.index(item)
+            index = self.get_index(item)
             self.display_result(result_data=self.history[index].raw)
 
+    def show_context_menu(self, event: tk.Event):
+        """顯示右鍵選單"""
+        # 取得滑鼠所在位置對應的 item
+        item = self.tree.identify_row(event.y)
+        if item:
+            selected_items = self.tree.selection()
+            # item 不是原本 tree 中被選到的，則強制選擇這項
+            if item not in selected_items:
+                self.tree.selection_set(item)
+                self.tree.focus(item)
+
+                self.on_single_click(event)
+
+            # 顯示選單
+            try:
+                self.context_menu.tk_popup(event.x_root, event.y_root)
+            finally:
+                self.context_menu.grab_release()
+
+    # def hide_context_menu(self, event: tk.Event):
+    #     """隱藏右鍵選單"""
+    #     self.context_menu.unpost()
+
+    def delete_selected(self):
+        """刪除所有選擇的項目"""
+        selected_items = self.tree.selection()
+        if not selected_items:
+            return
+
+        for item in selected_items:
+            index = self.get_index(item)
+            full_path = self.history[index].path
+            os.remove(full_path)
+
+        self.update_history_data()
+        self.display_result(None)
+
     def update_history_data(self) -> None:
-        """更新歷史資料"""
+        """重新載入歷史資料"""
         history: list[HistoryData] = []
 
         # 讀取指定資料夾下的所有檔案
@@ -110,8 +158,7 @@ class HistoryView:
                 history_data = HistoryData(full_path, date, raw)
                 history.append(history_data)
             except Exception as e:
-                print(e)
-                print("This file can't not be read!")
+                print(e, "This file can't not be read!")
                 pass
 
         self.history = history
