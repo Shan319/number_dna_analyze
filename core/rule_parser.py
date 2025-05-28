@@ -281,12 +281,15 @@ class RuleParser:
         """
         # 實現數字轉換規則
         def handle_5_between_9_1(s):
-            """處理9-5-1的特殊情況"""
+            """處理9-5-1和1-5-9的特殊情況"""
             result = ''
             i = 0
             while i < len(s) - 2:
                 if s[i] == '9' and s[i+1] == '5' and s[i+2] == '1':
                     result += '91' + '91'
+                    i += 3
+                elif s[i] == '1' and s[i+1] == '5' and s[i+2] == '9':
+                    result += '19' + '19'
                     i += 3
                 else:
                     result += s[i]

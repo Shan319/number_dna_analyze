@@ -86,6 +86,9 @@ def transform_numbers(number_str):
             if s[i] == '9' and s[i + 1] == '5' and s[i + 2] == '1':
                 result += '91' + '91'
                 i += 3
+            elif s[i] == '1' and s[i+1] == '5' and s[i+2] == '9':
+                result += '19' + '19'
+                i += 3
             else:
                 result += s[i]
                 i += 1
