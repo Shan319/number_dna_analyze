@@ -138,29 +138,7 @@ def create_input_frame(parent: tk.Frame, right_frame: tk.Frame, history_update_c
             # 記錄錯誤
             print(f"儲存設定失敗: {e}")
 
-    # def on_save_settings():  # 點擊「儲存設定」按鈕，執行on_save_settings函數
-    #     settings = {
-    #         "digit_length": digit_var.get(),
-    #         "custom_digit": custom_digit_var.get(),
-    #         "mix_mode": mixed_var.get(),
-    #         "english_position": english_position_var.get(),
-    #         "fixed_eng": fixed_eng_var.get(),
-    #         "fixed_num": fixed_num_var.get(),
-    #         "default_conditions": {
-    #             k: v.get()
-    #             for k, v in default_vars.items()
-    #         },
-    #         "other_conditions": {
-    #             k: v.get()
-    #             for k, v in other_vars.items()
-    #         }
-    #     }
-
-    #     with open("saved_settings.json", "w", encoding="utf-8") as f:
-    #         json.dump(settings, f, ensure_ascii=False, indent=2)
-
-    #     tk.messagebox.showinfo("提示", "設定已儲存到 saved_settings.json！")
-
+    
     def load_settings():  # 載入設定
         from ui.settings_module import (digit_var, custom_digit_var, mixed_var,
                                         english_position_var, fixed_eng_var, fixed_num_var,

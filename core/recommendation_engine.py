@@ -129,34 +129,6 @@ def generate_lucky_number_chain_by_cancel_fields(cancel_fields, length):
             magnetic_sequence.append(pair)
             remaining_fields[field] -= 1
 
-    # # 開始接龍
-    # while len(magnetic_sequence) < num_fields:
-    #     last_digit = magnetic_sequence[-1][1]
-
-    #     # 找所有合法接得上的磁場對，且 cancel_fields 還有剩
-    #     candidates = []
-    #     for field in ["天醫", "生氣", "伏位", "延年"]:
-    #         if remaining_fields.get(field, 0) > 0:
-    #             for pair in magneticic_pairs[field]:
-    #                 if pair[0] == last_digit:
-    #                     candidates.append((field, pair))
-    #     # 檢查複合字段
-    #     for field in list(remaining_fields.keys()):
-    #         if '+' in field and remaining_fields[field] > 0:
-    #             components = field.split('+')
-    #             for component in components:
-    #                 if component in magneticic_pairs:
-    #                     for pair in magneticic_pairs[component]:
-    #                         if pair[0] == last_digit:
-    #                             candidates.append((field, pair))
-
-    #     if not candidates:
-    #         break  # 沒有可以接上的磁場對，結束
-
-    #     field, pair = random.choice(candidates)
-    #     magnetic_sequence.append(pair)
-    #     remaining_fields[field] -= 1
-
     # 串接成幸運數字
     result = magnetic_sequence[0]
     for i in range(1, len(magnetic_sequence)):

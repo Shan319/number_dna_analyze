@@ -17,8 +17,8 @@ import logging
 import os
 from functools import partial
 
-from core.field_analyzer import analyze_input, analyze_name_strokes, analyze_mixed_input
-from core.number_analyzer import keyword_fields, magnetic_fields, analyze_magnetic_fields
+from core.field_analyzer import analyze_input
+from core.number_analyzer import keyword_fields
 
 # 設定日誌記錄器
 logger = logging.getLogger("數字DNA分析器.ResultModule")
@@ -131,25 +131,6 @@ def update_display(frame, result_data):
     details_tab = ttk.Frame(notebook)
     notebook.add(details_tab, text="磁場詳情")
     create_details_tab(details_tab, result_data)
-
-    # # 底部按鈕區域
-    # button_frame = tk.Frame(frame)
-    # button_frame.pack(fill="x", padx=10, pady=10)
-
-    # # 保存按鈕
-    # save_btn = tk.Button(button_frame, text="儲存分析", command=lambda: save_result(result_data))
-    # save_btn.pack(side="left", padx=5)
-
-    # # 匯出按鈕
-    # export_btn = tk.Button(button_frame, text="匯出報告", command=lambda: export_report(result_data))
-    # export_btn.pack(side="left", padx=5)
-
-    # # 顯示視覺化按鈕
-    # if "visualization" in result_data or "adjusted_counts" in result_data:
-    #     visual_btn = tk.Button(button_frame,
-    #                            text="磁場視覺化",
-    #                            command=lambda: show_visualization(result_data))
-    #     visual_btn.pack(side="right", padx=5)
 
 
 def create_basic_tab(tab, result_data):
