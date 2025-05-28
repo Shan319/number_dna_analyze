@@ -2,6 +2,7 @@
 
 import os
 import json
+from typing import Callable
 
 import tkinter as tk
 from tkinter import messagebox
@@ -13,7 +14,7 @@ from ui.settings_module import create_settings_frame
 from ui.result_module import create_result_content
 
 
-def create_input_frame(parent: tk.Frame, right_frame: tk.Frame):
+def create_input_frame(parent: tk.Frame, right_frame: tk.Frame, history_update_cb: Callable):
     frame = tk.LabelFrame(parent, text="輸入區", font=("Arial", 14))
 
     # ===== 基本輸入欄位 =====
@@ -21,7 +22,7 @@ def create_input_frame(parent: tk.Frame, right_frame: tk.Frame):
     id_var = tk.StringVar()
     phone_var = tk.StringVar()
     birth_var = tk.StringVar()
-    custom_var = tk.StringVar() #  英數混合
+    custom_var = tk.StringVar()  # 英數混合
     use_name = tk.BooleanVar()
     use_id = tk.BooleanVar()
     use_phone = tk.BooleanVar()
@@ -37,11 +38,10 @@ def create_input_frame(parent: tk.Frame, right_frame: tk.Frame):
                                         default_vars, other_vars)
 
         # 收集輸入資料 (傳入所有設定變量)
-        data = collect_input_data(
-            name_var, id_var, phone_var, birth_var,custom_var, use_name, use_id,use_phone,use_birth, use_custom,
-            digit_var, custom_digit_var, mixed_var, english_position_var,
-            fixed_eng_var, fixed_num_var, default_vars, other_vars
-        )
+        data = collect_input_data(name_var, id_var, phone_var, birth_var, custom_var, use_name,
+                                  use_id, use_phone, use_birth, use_custom, digit_var,
+                                  custom_digit_var, mixed_var, english_position_var, fixed_eng_var,
+                                  fixed_num_var, default_vars, other_vars)
 
         errors = validate_all(data)  # 檢查輸入是否合法
         if errors:
@@ -60,7 +60,6 @@ def create_input_frame(parent: tk.Frame, right_frame: tk.Frame):
             for widget in right_frame.winfo_children():
                 widget.destroy()
 
-            print("**" * 8)
             result_frame1 = create_result_content(right_frame, result_data)
             result_frame1.pack(expand=True, fill="both", padx=10, pady=10)
 
@@ -68,6 +67,8 @@ def create_input_frame(parent: tk.Frame, right_frame: tk.Frame):
         result_controller.process_result(result_data=result,
                                          input_data=data,
                                          display_callback=display_result)
+
+        history_update_cb()
         # result_controller.process_result(result_data=result,
         #                                  input_data=data,
         #                                  display_callback=create_result_frame)
@@ -198,16 +199,29 @@ def create_input_frame(parent: tk.Frame, right_frame: tk.Frame):
     tk.Entry(frame, textvariable=id_var, width=20).grid(row=row, column=1, columnspan=3, sticky="w")
 
     row += 1
-    tk.Checkbutton(frame, text="手機（格式 09xxxxxxxx）：",variable= use_phone).grid(row=row, column=0, sticky="w")
-    tk.Entry(frame, textvariable=phone_var, width=20).grid(row=row, column=1, columnspan=3, sticky="w")
+    tk.Checkbutton(frame, text="手機（格式 09xxxxxxxx）：", variable=use_phone).grid(row=row,
+                                                                              column=0,
+                                                                              sticky="w")
+    tk.Entry(frame, textvariable=phone_var, width=20).grid(row=row,
+                                                           column=1,
+                                                           columnspan=3,
+                                                           sticky="w")
 
     row += 1
-    tk.Checkbutton(frame, text="生日（格式 yyyy/mm/dd）：",variable= use_birth).grid(row=row, column=0, sticky="w")
-    tk.Entry(frame, textvariable=birth_var, width=20).grid(row=row, column=1, columnspan=3, sticky="w")
+    tk.Checkbutton(frame, text="生日（格式 yyyy/mm/dd）：", variable=use_birth).grid(row=row,
+                                                                              column=0,
+                                                                              sticky="w")
+    tk.Entry(frame, textvariable=birth_var, width=20).grid(row=row,
+                                                           column=1,
+                                                           columnspan=3,
+                                                           sticky="w")
 
     row += 1
     tk.Checkbutton(frame, text="英數混合：", variable=use_custom).grid(row=row, column=0, sticky="w")
-    tk.Entry(frame, textvariable=custom_var, width=20).grid(row=row,column=1,columnspan=3,sticky="w")
+    tk.Entry(frame, textvariable=custom_var, width=20).grid(row=row,
+                                                            column=1,
+                                                            columnspan=3,
+                                                            sticky="w")
 
     # ===== 插入設定條件模組 =====
     row += 1

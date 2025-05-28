@@ -12,6 +12,7 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import messagebox
 
+
 # 自動更新 pip（很重要）
 def upgrade_pip():
     try:
@@ -21,12 +22,15 @@ def upgrade_pip():
         messagebox.showerror("錯誤", f"pip 更新失敗，請手動執行：\npython -m pip install --upgrade pip")
         sys.exit(1)
 
+
 # 自動安裝 requirements.txt
 def ensure_requirements():
     requirements_path = Path(__file__).parent / "requirements.txt"
     if requirements_path.exists():
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", str(requirements_path)])
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", "-r",
+                 str(requirements_path)])
         except subprocess.CalledProcessError as e:
             print(f"❌ pip 安裝失敗: {e}")
             messagebox.showerror("錯誤", f"套件安裝失敗，請手動執行：\n\npip install -r requirements.txt")
@@ -36,9 +40,10 @@ def ensure_requirements():
         messagebox.showerror("錯誤", "找不到 requirements.txt！")
         sys.exit(1)
 
+
 # 執行 pip 升級與安裝套件
-upgrade_pip()
-ensure_requirements()
+# upgrade_pip()
+# ensure_requirements()
 
 # 載入 UI 主畫面
 try:
@@ -61,19 +66,16 @@ for path in [log_dir, history_dir, resources_dir / "rules", resources_dir / "ima
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s (%(name)s)[%(levelname)s] %(message)s',
-    handlers=[
-        logging.FileHandler(log_dir / "app.log", encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
+    handlers=[logging.FileHandler(log_dir / "app.log", encoding="utf-8"),
+              logging.StreamHandler()])
 
 logger = logging.getLogger("數字DNA分析器")
+
 
 # 檢查必備檔案
 def check_required_files():
     required_files = [
-        resources_dir / "characters.txt",
-        resources_dir / "rules" / "base_rules.json",
+        resources_dir / "characters.txt", resources_dir / "rules" / "base_rules.json",
         resources_dir / "rules" / "field_rules.json"
     ]
     for file_path in required_files:
@@ -82,12 +84,15 @@ def check_required_files():
             return False
     return True
 
+
 # 未捕捉例外處理
 def handle_exception(exc_type, exc_value, exc_traceback):
     logger.error("未捕獲的異常", exc_info=(exc_type, exc_value, exc_traceback))
     messagebox.showerror("錯誤", f"發生意外錯誤: {exc_value}\n\n請聯繫開發人員。")
 
+
 sys.excepthook = handle_exception
+
 
 # 主程式進入點
 def main():
@@ -102,6 +107,7 @@ def main():
         logger.critical(f"程式啟動錯誤: {e}", exc_info=True)
         messagebox.showerror("錯誤", f"應用程式啟動失敗：{e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

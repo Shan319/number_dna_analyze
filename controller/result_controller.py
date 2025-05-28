@@ -113,7 +113,7 @@ class ResultController:
 
             # 如果沒有提供檔案名稱，則自動生成
             if not filename:
-                filename = f"{input_type}_{timestamp}.json"
+                filename = f"{timestamp}.json"
 
             # 確保檔案名稱有.json副檔名
             if not filename.endswith('.json'):
@@ -122,7 +122,7 @@ class ResultController:
             # 組合完整路徑
             filepath = os.path.join(self.history_dir, filename)
 
-            # 創建一個可序列化的結果副本
+            # 創建一個可存入json的結果副本
             serializable_data = self._prepare_data_for_json(result_data)
 
             # 儲存結果到JSON檔案

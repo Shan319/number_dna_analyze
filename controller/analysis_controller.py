@@ -9,6 +9,7 @@
 
 import logging
 from collections import Counter
+from typing import Any
 
 # 從核心模組導入分析功能
 from core.field_analyzer import analyze_input, analyze_name_strokes, analyze_mixed_input
@@ -32,30 +33,37 @@ def analyze(input_data):
     result = {
         "input_type": "",
         "raw_analysis": "",
+        "input_value": "",
         "counts": {},
         "adjusted_counts": {},
         "recommendations": [],
         "field_details": {},
-        "messages": []
+        "messages": [],
+        # "timestamp": None
     }
 
     try:
         # 決定輸入類型和分析方法
         if "name" in input_data and input_data["name"]:
             result["input_type"] = "姓名"
+            result["input_value"] = input_data["name"]  # 保存原始輸入值
             raw_result = analyze_name_strokes(input_data["name"])
         elif "id" in input_data and input_data["id"]:
             result["input_type"] = "身分證"
+            result["input_value"] = input_data["id"]
             raw_result = analyze_input(input_data["id"], is_id=True)
         elif "birth" in input_data and input_data["birth"]:
             result["input_type"] = "生日"
+            result["input_value"] = input_data["birth"]
             raw_result = analyze_input((input_data["birth"]).replace("/", ""))
         elif "phone" in input_data and input_data["phone"]:
             result["input_type"] = "手機號碼"
-            raw_result = analyze_input(input_data["phone"])     
+            result["input_value"] = input_data["phone"]
+            raw_result = analyze_input(input_data["phone"])
         elif "custom" in input_data and input_data["custom"]:
             # 處理自定義輸入 - 根據混合模式決定分析方法
             result["input_type"] = "自定義"
+            result["input_value"] = input_data["custom"]
             if input_data.get("mix_mode", False):
                 raw_result = analyze_mixed_input(input_data["custom"])
             else:
@@ -66,6 +74,10 @@ def analyze(input_data):
 
         # 處理原始分析結果
         result["raw_analysis"] = raw_result
+        if not raw_result:  # 檢查空結果
+            result["messages"].append("分析結果為空，請檢查輸入數據")
+            return result
+
         magnetic_fields_list = raw_result.split()
 
         # # 計算磁場頻率
@@ -107,6 +119,47 @@ def analyze(input_data):
         logger.error(f"分析過程發生錯誤: {e}", exc_info=True)
         result["messages"].append(f"分析錯誤: {str(e)}")
         return result
+
+
+def validate_analysis_input(input_data: dict[str, Any]) -> tuple[bool, list[str]]:
+    """
+    驗證分析輸入數據的有效性
+
+    Args:
+        input_data: 輸入數據字典
+
+    Returns:
+        tuple[bool, list[str]]: (是否有效, 錯誤訊息列表)
+    """
+    errors = []
+
+    # 檢查是否有至少一個有效輸入
+    valid_inputs = []
+
+    if input_data.get("name"):
+        valid_inputs.append("姓名")
+    if input_data.get("id"):
+        valid_inputs.append("身分證")
+    if input_data.get("birth"):
+        valid_inputs.append("生日")
+    if input_data.get("phone"):
+        valid_inputs.append("手機")
+    if input_data.get("custom"):
+        valid_inputs.append("自定義")
+
+    if not valid_inputs:
+        errors.append("請至少提供一種輸入數據（姓名、身分證、生日、手機或自定義）")
+
+    # # 檢查數字長度設定
+    # digit_length = input_data.get("digit_length")
+    # if digit_length == "custom":
+    #     custom_digit = input_data.get("custom_digit")
+    #     if not custom_digit or not custom_digit.isdigit():
+    #         errors.append("自定義位數必須是正整數")
+    #     elif int(custom_digit) < 1 or int(custom_digit) > 20:
+    #         errors.append("自定義位數必須在1-20之間")
+
+    return len(errors) == 0, errors
 
 
 def apply_advanced_rules(input_list):
