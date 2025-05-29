@@ -1,158 +1,147 @@
+#  core/recommendation_engine.py
 import random
-
-# 生成增強磁場
-def create_boost_field(tienyi, shenchi, yenien):
-    boost_fields = dict()
-    if tienyi:
-        boost_fields["天醫"] = 1
-    if shenchi:
-        boost_fields["生氣"] = 1
-    if yenien:
-        boost_fields["延年"] = 1
-
-    return boost_fields
-
-boost_fields = create_boost_field(tienyi, shenchi, yenien)
-
 
 # 每種磁場對應的兩位數字組合
 magneticic_pairs = {
-    "伏位": ["11", "22", "33", "44", "66", "77", "88", "99"],
+    "伏位": ["00", "11", "22", "33", "44", "66", "77", "88", "99"],
     "生氣": ["14", "41", "67", "76", "39", "93", "28", "82"],
     "天醫": ["13", "31", "68", "86", "49", "94", "27", "72"],
     "延年": ["19", "91", "78", "87", "34", "43", "26", "62"]
 }
 
 
-# 產生抵銷表 & 五鬼三連段數量
-def cancel_negative_magnetic_field(magnetic_fields):
+# 用於磁場抵銷的原始函式
+def generate_lucky_numbers(magnetic_fields):
     fields = magnetic_fields.copy()
-    cancel_fields = {"天醫": 0, "生氣": 0, "伏位": 0, "延年": 0}
+    neg_fields = dict()
+    cancel_fields = {"天醫": 0, "生氣": 0, "伏位": 0, "延年": 0, "天醫+生氣+延年": 0}
 
-    wugui_count = fields.get("五鬼", 0)
-    cancel_fields["天醫"] += wugui_count
-    cancel_fields["生氣"] += wugui_count
-    cancel_fields["延年"] += wugui_count
+    neg_fields["五鬼"] = fields.get("五鬼", 0)
+    neg_fields["六煞"] = fields.get("六煞", 0)
+    neg_fields["絕命"] = fields.get("絕命", 0)
+    neg_fields["禍害"] = fields.get("禍害", 0)
 
-    cancel_fields["天醫"] += fields.get("絕命", 0)
-    cancel_fields["延年"] += fields.get("六煞", 0)
+    while neg_fields["絕命"] > 0:
+        cancel_fields["天醫"] += 1
+        neg_fields["絕命"] -= 1
 
-    for _ in range(fields.get("禍害", 0)):
+    while neg_fields["六煞"] > 0:
+        cancel_fields["延年"] += 1
+        neg_fields["六煞"] -= 1
+
+    while neg_fields["五鬼"] > 0:
+        cancel_fields["天醫+生氣+延年"] += 1
+        neg_fields["五鬼"] -= 1
+
+    while neg_fields["禍害"] > 0:
         cancel_fields["生氣"] += 1
-        r = random.choice(["生氣", "伏位", "延年"])
+        r = random.sample(["生氣", "伏位", "延年"], k=1)[0]
         cancel_fields[r] += 1
+        neg_fields["禍害"] -= 1
 
-    return cancel_fields, wugui_count
-
-
-# 尋找一組生氣→天醫→延年 三連段（尾接頭）
-def find_triplet():
-    triplets = []
-    for p1 in magneticic_pairs["生氣"]:
-        for p2 in magneticic_pairs["天醫"]:
-            if p1[1] != p2[0]:
-                continue
-            for p3 in magneticic_pairs["延年"]:
-                if p2[1] == p3[0]:
-                    triplets.append([("生氣", p1), ("天醫", p2), ("延年", p3)])
-    return random.choice(triplets) if triplets else []
+    return cancel_fields
 
 
-# 根據 cancel_fields 與 wugui 數量 建立幸運數字
-def generate_lucky_number(cancel_fields, length, num_triplets, boost_fields):
+def generate_lucky_number_chain_by_cancel_fields(cancel_fields, length):
     num_fields = length - 1
     magnetic_sequence = []
+
+    # 將所有磁場對應的字典展平為 (field, pair) 的組合
+    all_pairs_by_field = []
+    for field in ["天醫", "生氣", "伏位", "延年"]:
+        for pair in magneticic_pairs[field]:
+            all_pairs_by_field.append((field, pair))
+
+    # 儲存剩餘的 cancel_fields 數量
     remaining_fields = cancel_fields.copy()
 
-    for _ in range(num_triplets):
-        if (remaining_fields.get("生氣", 0) >= 1 and
-            remaining_fields.get("天醫", 0) >= 1 and
-            remaining_fields.get("延年", 0) >= 1):
-            triplet = find_triplet()
-            if triplet:
-                for field, pair in triplet:
-                    magnetic_sequence.append(pair)
+    # 起始磁場：從有剩餘的 cancel_fields 中選
+    possible_start_fields = [f for f in remaining_fields if remaining_fields[f] > 0]
+    random.shuffle(possible_start_fields)
+
+    start_field = None
+    for field in possible_start_fields:
+        if remaining_fields[field] > 0:
+            # 檢查是否為複合字段
+            if '+' in field:
+                # 從複合字段中隨機選擇一個組成部分
+                components = field.split('+')
+                valid_components = [c for c in components if c in magneticic_pairs]
+                if valid_components:
+                    start_field = random.choice(valid_components)
+                    start_pair = random.choice(magneticic_pairs[start_field])
+                    magnetic_sequence.append(start_pair)
                     remaining_fields[field] -= 1
+                    break
+            else:
+                if field in magneticic_pairs:
+                    start_pair = random.choice(magneticic_pairs[field])
+                    magnetic_sequence.append(start_pair)
+                    remaining_fields[field] -= 1
+                    break
 
+    # 如果沒有找到有效的起始字段，使用任意一個可用的磁場
+    if not magnetic_sequence:
+        start_field = random.choice(list(magneticic_pairs.keys()))
+        start_pair = random.choice(magneticic_pairs[start_field])
+        magnetic_sequence.append(start_pair)
+
+    # 開始接龍
     while len(magnetic_sequence) < num_fields:
-        last_digit = magnetic_sequence[-1][1] if magnetic_sequence else None
-        candidates = []
+        last_digit = magnetic_sequence[-1][1]
 
-        for field in ["天醫", "生氣", "伏位", "延年"]:
-            if remaining_fields.get(field, 0) > 0:
+        # 找所有合法接得上的磁場對，且 cancel_fields 還有剩
+        candidates = []
+        for field, count in remaining_fields.items():
+            if count <= 0:
+                continue
+
+            # 處理單一磁場
+            if field in magneticic_pairs:
                 for pair in magneticic_pairs[field]:
-                    if last_digit is None or pair[0] == last_digit:
+                    if pair[0] == last_digit:
                         candidates.append((field, pair))
+            # 處理複合磁場
+            elif '+' in field:
+                components = field.split('+')
+                for component in components:
+                    if component in magneticic_pairs:
+                        for pair in magneticic_pairs[component]:
+                            if pair[0] == last_digit:
+                                candidates.append((field, pair))
 
         if not candidates:
-            break  # 跳出 while，轉交給 boost or fallback
-        field, pair = random.choice(candidates)
-        magnetic_sequence.append(pair)
-        remaining_fields[field] -= 1
+            # 如果沒有剩餘的 cancel_fields 可用，就從所有磁場中隨機選擇一個
+            for base_field in magneticic_pairs:
+                for pair in magneticic_pairs[base_field]:
+                    if pair[0] == last_digit:
+                        candidates.append((None, pair))
 
-    if boost_fields:
-        for field in boost_fields:
-            if field in magneticic_pairs:
-                last_digit = magnetic_sequence[-1][1] if magnetic_sequence else None
-                valid_boosts = [p for p in magneticic_pairs[field] if last_digit is None or p[0] == last_digit]
-                if valid_boosts:
-                    magnetic_sequence.append(random.choice(valid_boosts))
-                else:
-                    magnetic_sequence.append(random.choice(magneticic_pairs[field]))
+            if not candidates:
+                break  # 無法繼續接龍
 
+            # 隨機選擇一個候選對
+            _, pair = random.choice(candidates)
+            magnetic_sequence.append(pair)
+        else:
+            # 從剩餘的 cancel_fields 中選擇
+            field, pair = random.choice(candidates)
+            magnetic_sequence.append(pair)
+            remaining_fields[field] -= 1
 
-    while len(magnetic_sequence) < num_fields:
-        last_digit = magnetic_sequence[-1][1] if magnetic_sequence else None
-        # 嘗試找到可以接上的伏位 pair
-        found = False
-        for pair in magneticic_pairs["伏位"]:
-            if last_digit is None or pair[0] == last_digit:
-                magnetic_sequence.append(pair)
-                found = True
-                break
-        # 如果找不到相連的伏位組合，也直接隨機補一組
-        if not found:
-            magnetic_sequence.append(random.choice(magneticic_pairs["伏位"]))
-
-
-    if not magnetic_sequence:
-        return ""
+    # 串接成幸運數字
     result = magnetic_sequence[0]
     for i in range(1, len(magnetic_sequence)):
         result += magnetic_sequence[i][1]
 
-    return result[:length]
-
-
-def generate_final_lucky_number(magnetic_fields, total_length, fixed_part="", position):
-    # Step 1: 計算剩餘可用長度
-    lucky_length = total_length - len(fixed_part)
-    if lucky_length < 2:
-        return fixed_part[:total_length]  # 無法產生有效幸運碼，只能裁切固定字串
-
-    # Step 2: 取得正向磁場需求與三連段數
-    cancel_fields, wugui_count = cancel_negative_magnetic_field(magnetic_fields)
-
-    # Step 3: 產生幸運數字（需 lucky_length 長度）
-    lucky_number = generate_lucky_number(cancel_fields, lucky_length, wugui_count)
-
-    # Step 4: 插入固定字串
-    if position == "front":
-        result = fixed_part + lucky_number
-    elif position == "middle":
-        mid = len(lucky_number) // 2
-        result = lucky_number[:mid] + fixed_part + lucky_number[mid:]
-    elif position == "back":
-        result = lucky_number + fixed_part
-    else:
-        raise ValueError("position 參數需為 'front'、'middle' 或 'back'")
-
     return result
 
 
-def generate_multiple_lucky_numbers(magnetic_fields, total_length, count = 15, fixed_part="", position):
+# 產生多組幸運數字（連續磁場模式）
+def generate_multiple_lucky_numbers(magnetic_input, length, count=15):
+    cancel = generate_lucky_numbers(magnetic_input)
     results = []
     for _ in range(count):
-        result = generate_final_lucky_number(magnetic_fields, total_length, fixed_part, position)
-        results.append(result)
+        lucky = generate_lucky_number_chain_by_cancel_fields(cancel, length)
+        results.append(lucky)
     return results

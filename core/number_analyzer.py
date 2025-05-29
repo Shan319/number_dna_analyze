@@ -1,3 +1,4 @@
+#  core/number_analyzer.py
 from collections import Counter
 
 # 磁場定義
@@ -47,143 +48,101 @@ magnetic_fields = {
              "relationship_advice": "和諧相處，避免糾纏，設定清晰界限"}
 }
 
-# 使用者輸入 
-input_type = input("請輸入資料來源類別（身分證字號、生日、手機號碼、姓名）：").strip()
-input_str = input("請輸入磁場名稱（以空格分隔）：").strip()
-input_list = input_str.split()
+def analyze_magnetic_fields(input_list):
+    """
+    分析磁場並返回結果
 
-# 初步計數 
-base_counts = Counter(input_list)
-print("\n[磁場出現次數與關鍵字]")  # 標題更新
+    Args:
+        input_list (list): 磁場名稱列表
 
-for field, count in base_counts.items():
-    keywords = "、".join(keyword_fields.get(field, []))  # 取得關鍵字集合並轉成字串
-    print(f"{field}：{count}（{keywords}）")
+    Returns:
+        tuple: (base_counts, adjusted_counts, adjust_log)
+        - base_counts: 原始磁場計數
+        - adjusted_counts: 調整後的磁場計數
+        - adjust_log: 調整日誌
+    """
+    # 初步計數
+    base_counts = Counter(input_list)
 
-# 額外年齡輸出（身分證字號專屬)
-if input_type == "身分證字號":
-    print("\n[歲數對應磁場]")
-    total = len(input_list)
-    age_start = 0
-    first = True
-    for idx, field in enumerate(input_list):
-        if first:
-            age_end = 10
-            first = False
-        elif idx == total - 1:
-            print(f"{age_start}~70(歲) {field}")
-            break
-        else:
-            age_end = age_start + 5
-        print(f"{age_start}~{age_end}(歲) {field}")
-        age_start = age_end
+    # 進階規則處理
+    adjusted_counts = base_counts.copy()
+    adjust_log = []
 
-# 進階規則處理
-adjusted_counts = base_counts.copy()
-adjust_log = []
+    # 使用 try-except 以防磁場名稱不在預定義列表中
+    try:
+        # 規則 1：天醫 vs 絕命 抵銷
+        cancel_count = min(adjusted_counts.get("天醫", 0), adjusted_counts.get("絕命", 0))
+        if cancel_count > 0:
+            adjusted_counts["天醫"] -= cancel_count
+            adjusted_counts["絕命"] -= cancel_count
+            adjust_log.append(f"(天醫-{cancel_count})")
+            adjust_log.append(f"(絕命-{cancel_count})")
 
-# 規則 1：天醫 vs 絕命 抵銷
-cancel_count = min(adjusted_counts["天醫"], adjusted_counts["絕命"])
-if cancel_count > 0:
-    adjusted_counts["天醫"] -= cancel_count
-    adjusted_counts["絕命"] -= cancel_count
-    adjust_log.append(f"(天醫-{cancel_count})")
-    adjust_log.append(f"(絕命-{cancel_count})")
+        # 規則 2：延年 vs 六煞 抵銷
+        cancel_count = min(adjusted_counts.get("延年", 0), adjusted_counts.get("六煞", 0))
+        if cancel_count > 0:
+            adjusted_counts["延年"] -= cancel_count
+            adjusted_counts["六煞"] -= cancel_count
+            adjust_log.append(f"(延年-{cancel_count})")
+            adjust_log.append(f"(六煞-{cancel_count})")
 
-# 規則 2：延年 vs 六煞 抵銷
-cancel_count = min(adjusted_counts["延年"], adjusted_counts["六煞"])
-if cancel_count > 0:
-    adjusted_counts["延年"] -= cancel_count
-    adjusted_counts["六煞"] -= cancel_count
-    adjust_log.append(f"(延年-{cancel_count})")
-    adjust_log.append(f"(六煞-{cancel_count})")
+        # 規則 3：固定對組合 -> 抵一個禍害
+        group_pairs = [("生氣", "生氣"), ("生氣", "延年"), ("生氣", "伏位"), ("延年", "生氣")]
+        i = 0
+        used_indexes = set()
+        while i < len(input_list) - 1:
+            pair = (input_list[i], input_list[i+1])
+            if pair in group_pairs and adjusted_counts.get("禍害", 0) > 0:
+                adjust_log.append(f"({pair[0]}-1) ({pair[1]}-1) (禍害-1)")
+                adjusted_counts[pair[0]] -= 1
+                adjusted_counts[pair[1]] -= 1
+                adjusted_counts["禍害"] -= 1
+                used_indexes.update([i, i+1])
+                i += 2
+            else:
+                i += 1
 
-# 規則 3：固定對組合 -> 抵一個禍害
-group_pairs = [("天醫", "天醫"), ("天醫", "延年"), ("生氣", "伏位"), ("延年", "生氣")]
-i = 0
-used_indexes = set()
-while i < len(input_list) - 1:
-    pair = (input_list[i], input_list[i+1])
-    if pair in group_pairs and adjusted_counts["禍害"] > 0:
-        adjust_log.append(f"({pair[0]}-1) ({pair[1]}-1) (禍害-1)")
-        adjusted_counts[pair[0]] -= 1
-        adjusted_counts[pair[1]] -= 1
-        adjusted_counts["禍害"] -= 1
-        used_indexes.update([i, i+1])
-        i += 2
-    else:
-        i += 1
+        # 規則 4：生氣+天醫+延年 -> 抵五鬼
+        i = 0
+        while i < len(input_list) - 2:
+            triplet = input_list[i:i+3]
+            if triplet == ["生氣", "天醫", "延年"] and adjusted_counts.get("五鬼", 0) > 0:
+                adjust_log.append("(生氣-1) (天醫-1) (延年-1) (五鬼-1)")
+                for t in triplet:
+                    adjusted_counts[t] -= 1
+                adjusted_counts["五鬼"] -= 1
+                i += 3
+            else:
+                i += 1
 
-# 規則 4：生氣+天醫+延年 -> 抵五鬼
-i = 0
-while i < len(input_list) - 2:
-    triplet = input_list[i:i+3]
-    if triplet == ["生氣", "天醫", "延年"] and adjusted_counts["五鬼"] > 0:
-        adjust_log.append("(生氣-1) (天醫-1) (延年-1) (五鬼-1)")
-        for t in triplet:
-            adjusted_counts[t] -= 1
-        adjusted_counts["五鬼"] -= 1
-        i += 3
-    else:
-        i += 1
+        # 規則 5：磁場後連續伏位，需排除已使用 index
+        i = 0
+        while i < len(input_list) - 1:
+            if i in used_indexes or input_list[i] == "伏位":
+                i += 1
+                continue
 
-# 規則 5：磁場後連續伏位，需排除已使用 index
-i = 0
-while i < len(input_list) - 1:
-    if i in used_indexes or input_list[i] == "伏位":
-        i += 1
-        continue
+            count = 0
+            j = i + 1
+            while j < len(input_list) and input_list[j] == "伏位" and j not in used_indexes:
+                count += 1
+                j += 1
 
-    count = 0
-    j = i + 1
-    while j < len(input_list) and input_list[j] == "伏位" and j not in used_indexes:
-        count += 1
-        j += 1
+            if count > 0 and adjusted_counts.get("伏位", 0) >= count:
+                adjusted_counts[input_list[i]] += count
+                adjusted_counts["伏位"] -= count
+                adjust_log.append(f"({input_list[i]}+{count}) (伏位-{count})")
+                for k in range(i, j):
+                    used_indexes.add(k)
+                i = j
+            else:
+                i += 1
+    except Exception as e:
+        # 處理可能的錯誤，例如磁場名稱不在預定義列表中
+        print(f"分析磁場時發生錯誤: {e}")
 
-    if count > 0 and adjusted_counts["伏位"] >= count:
-        adjusted_counts[input_list[i]] += count
-        adjusted_counts["伏位"] -= count
-        adjust_log.append(f"({input_list[i]}+{count}) (伏位-{count})")
-        for k in range(i, j):
-            used_indexes.add(k)  # 記得也把這些 index 加入 used
-        i = j
-    else:
-        i += 1
+    # 移除計數為0的項目
+    adjusted_counts = {k: v for k, v in adjusted_counts.items() if v > 0}
 
-# 輸出調整結果
-print("\n[進階計算調整]")
-if adjust_log:
-    print(" ".join(adjust_log))
-else:
-    print("無調整規則被觸發")
+    return base_counts, adjusted_counts, adjust_log
 
-print("\n[進階統計結果]")
-for k, v in adjusted_counts.items():
-    if v > 0:
-        print(f"{k}*{v}")
-
-
-
-# 輸出選項
-print("\n請選擇要顯示的資訊（可複選，用逗號隔開）：")
-print("1. 優點（strengths）")
-print("2. 缺點（weaknesses）")
-print("3. 財務建議（financial_strategy）")
-print("4. 情感建議（relationship_advice）")
-options = input("請輸入選項編號（例如：1,2）：").split(",")
-
-option_map = {
-    "1": "strengths",
-    "2": "weaknesses",
-    "3": "financial_strategy",
-    "4": "relationship_advice"
-}
-
-for opt in options:
-    key = option_map.get(opt.strip())
-    if not key:
-        continue
-    print(f"\n{key.replace('_', ' ').title()}：")
-    for field in adjusted_counts:
-        if adjusted_counts[field] > 0:
-            print(f"{field}>{magnetic_fields[field][key]}")
