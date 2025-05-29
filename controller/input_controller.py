@@ -63,9 +63,9 @@ def collect_input_data(
     # 讀取數字位數限制
     digit_value = digit_var.get()
     if digit_value == "custom":
-        digits = int(custom_digit_var.get().strip())
+        digits = (custom_digit_var.get().strip())
     else:
-        digits = int(digit_value)
+        digits = (digit_value)
 
     # 讀取固定英數字
     custom_digits_length = mixed_var.get()
@@ -98,26 +98,6 @@ def collect_input_data(
                            fixed_digits_value=fixed_digits_value,
                            default_conditions=default_conditions,
                            other_conditions=other_conditions)
-    return input_data
-    input_data = {}
-
-    # 設定條件 (提供預設值)
-    input_data["default_conditions"] = {
-        k: v.get()
-        for k, v in default_vars.items()
-    } if default_vars is not None else {}
-    input_data["other_conditions"] = {
-        k: v.get()
-        for k, v in other_vars.items()
-    } if other_vars is not None else {}
-
-    # 驗證是否有勾選輸入選項
-    from controller.analysis_controller import validate_analysis_input
-    is_valid, errors = validate_analysis_input(input_data)
-    if not is_valid:
-        # 處理驗證錯誤
-        pass
-
     return input_data
 
 

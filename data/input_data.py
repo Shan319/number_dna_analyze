@@ -23,7 +23,7 @@ class InputData:
     input_type: InputType
     input_value: str
     custom_digits_length: bool
-    digits_length: int
+    digits_length: int | str
     fixed_digits_position: FixDigitsPosition
     fixed_digits_value: str
     default_conditions: dict[str, bool]
