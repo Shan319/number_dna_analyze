@@ -1,15 +1,2 @@
 
-
-# matplotlib==3.7.1
-# numpy==1.24.3
-# pandas==2.0.1
-# Pillow==9.5.0
-# reportlab==4.0.0
 cryptography==40.0.2
-bcrypt==4.0.1
-# jsonschema==4.17.3
-# pyyaml
-# python-json-logger==2.0.7
-# pytest==7.3.1
-# black==23.3.0
-# pylint==2.17.4
