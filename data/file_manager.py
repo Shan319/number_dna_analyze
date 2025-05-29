@@ -30,11 +30,15 @@ except ImportError:
 # 設定日誌記錄器
 logger = logging.getLogger("數字DNA分析器.FileManager")
 
+
 class FileManager:
     """檔案管理類，負責檔案讀寫操作"""
 
-    def __init__(self, base_dir: str = None, history_dir: str = None,
-                 resources_dir: str = None, enable_encryption: bool = True):
+    def __init__(self,
+                 base_dir: str = None,
+                 history_dir: str = None,
+                 resources_dir: str = None,
+                 enable_encryption: bool = True):
         """
         初始化檔案管理器
 
@@ -157,8 +161,11 @@ class FileManager:
             self.logger.error(f"讀取JSON資源檔案失敗: {file_path}, 錯誤: {e}")
             raise
 
-    def save_resource_file(self, relative_path: str, content: str,
-                          encoding: str = 'utf-8', create_dirs: bool = True) -> bool:
+    def save_resource_file(self,
+                           relative_path: str,
+                           content: str,
+                           encoding: str = 'utf-8',
+                           create_dirs: bool = True) -> bool:
         """
         儲存內容到資源檔案
 
@@ -186,9 +193,12 @@ class FileManager:
             self.logger.error(f"儲存資源檔案失敗: {file_path}, 錯誤: {e}")
             return False
 
-    def save_resource_json(self, relative_path: str, data: Dict[str, Any],
-                          encoding: str = 'utf-8', create_dirs: bool = True,
-                          indent: int = 4) -> bool:
+    def save_resource_json(self,
+                           relative_path: str,
+                           data: Dict[str, Any],
+                           encoding: str = 'utf-8',
+                           create_dirs: bool = True,
+                           indent: int = 4) -> bool:
         """
         儲存數據到JSON資源檔案
 
@@ -233,8 +243,11 @@ class FileManager:
         os.makedirs(history_subdir, exist_ok=True)
         return history_subdir
 
-    def save_history(self, history_type: str, data: Union[str, Dict[str, Any]],
-                     filename: str = None, encrypt: bool = None) -> str:
+    def save_history(self,
+                     history_type: str,
+                     data: Union[str, Dict[str, Any]],
+                     filename: str | None = None,
+                     encrypt: bool | None = None) -> str:
         """
         儲存歷史紀錄
 
@@ -288,7 +301,9 @@ class FileManager:
             self.logger.error(f"儲存歷史紀錄失敗: {file_path}, 錯誤: {e}")
             raise
 
-    def load_history(self, history_type: str, filename: str = None) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+    def load_history(self,
+                     history_type: str,
+                     filename: str = None) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """
         讀取歷史紀錄
 
@@ -427,8 +442,10 @@ class FileManager:
 
     # ------ 分析結果管理 ------
 
-    def save_analysis_result(self, result: Dict[str, Any], filename: str = None,
-                            encrypt: bool = None) -> str:
+    def save_analysis_result(self,
+                             result: Dict[str, Any],
+                             filename: str | None = None,
+                             encrypt: bool | None = None) -> str:
         """
         儲存分析結果
 
@@ -470,8 +487,11 @@ class FileManager:
 
     # ------ 匯入匯出功能 ------
 
-    def export_to_json(self, data: Dict[str, Any], filepath: str,
-                      indent: int = 4, encrypt: bool = False) -> bool:
+    def export_to_json(self,
+                       data: Dict[str, Any],
+                       filepath: str,
+                       indent: int = 4,
+                       encrypt: bool = False) -> bool:
         """
         將數據匯出為JSON文件
 
@@ -503,8 +523,11 @@ class FileManager:
             self.logger.error(f"匯出JSON檔案失敗: {filepath}, 錯誤: {e}")
             return False
 
-    def export_to_text(self, data: str, filepath: str,
-                      encoding: str = 'utf-8', encrypt: bool = False) -> bool:
+    def export_to_text(self,
+                       data: str,
+                       filepath: str,
+                       encoding: str = 'utf-8',
+                       encrypt: bool = False) -> bool:
         """
         將數據匯出為文本文件
 
@@ -673,21 +696,18 @@ class FileManager:
             return 0
         return os.path.getmtime(filepath)
 
+
 # 直接執行文件時的測試程式
 if __name__ == "__main__":
     # 設定日誌
     logging.basicConfig(level=logging.DEBUG,
-                       format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     # 創建檔案管理器
     file_manager = FileManager()
 
     # 測試資源檔案讀寫
-    resource_test = {
-        "test": True,
-        "message": "這是一個測試資源檔案",
-        "timestamp": time.time()
-    }
+    resource_test = {"test": True, "message": "這是一個測試資源檔案", "timestamp": time.time()}
 
     # 儲存測試資源
     file_manager.save_resource_json("test/resource_test.json", resource_test)
@@ -697,11 +717,7 @@ if __name__ == "__main__":
     print("讀取的資源檔案:", loaded_resource)
 
     # 測試歷史紀錄
-    test_history = {
-        "input_type": "test",
-        "data": "測試數據",
-        "score": 100
-    }
+    test_history = {"input_type": "test", "data": "測試數據", "score": 100}
 
     # 儲存測試歷史
     history_path = file_manager.save_history("test", test_history)
@@ -715,7 +731,10 @@ if __name__ == "__main__":
     test_result = {
         "input_type": "姓名",
         "input_value": "測試姓名",
-        "counts": {"天醫": 2, "生氣": 1},
+        "counts": {
+            "天醫": 2,
+            "生氣": 1
+        },
         "recommendations": ["1234", "5678"]
     }
 

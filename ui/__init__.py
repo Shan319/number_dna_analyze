@@ -14,14 +14,9 @@
 # 導入UI模組組件
 from ui.main_window import main
 from ui.input_module import create_input_frame
-from ui.settings_module import (
-    create_settings_frame,
-    digit_var, custom_digit_var,
-    mixed_var, english_position_var,
-    fixed_eng_var, fixed_num_var,
-    default_vars, other_vars
-)
-from ui.result_module import create_result_frame
+from ui.settings_module import (create_settings_frame, digit_var, custom_digit_var, mixed_var,
+                                english_position_var, fixed_num_var, default_vars, other_vars)
+# from ui.result_module import create_result_frame
 
 # 定義版本
 __version__ = "1.0.0"
@@ -36,14 +31,18 @@ __all__ = [
 
     # 設定介面
     'create_settings_frame',
-    'digit_var', 'custom_digit_var',
-    'mixed_var', 'english_position_var',
-    'fixed_eng_var', 'fixed_num_var',
-    'default_vars', 'other_vars',
+    'digit_var',
+    'custom_digit_var',
+    'mixed_var',
+    'english_position_var',
+    'fixed_num_var',
+    'default_vars',
+    'other_vars',
 
-    # 結果展示
-    'create_result_frame'
+    # # 結果展示
+    # 'create_result_frame'
 ]
+
 
 # 註冊資源路徑
 def init_ui_resources(resource_path=None):

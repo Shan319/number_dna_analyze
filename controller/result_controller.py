@@ -13,6 +13,9 @@ import json
 import os
 import datetime
 from tkinter import messagebox
+
+from data.input_data import InputData
+from data.result_data import ResultData
 from data.file_manager import FileManager
 from controller.input_controller import save_input_history
 
@@ -38,7 +41,10 @@ class ResultController:
         #                                "data", "history")
         # os.makedirs(self.history_dir, exist_ok=True)
 
-    def process_result(self, result_data, input_data=None, display_callback=None):
+    def process_result(self,
+                       result_data: ResultData,
+                       input_data: InputData | None = None,
+                       display_callback=None):
         """
         處理分析結果並交由UI顯示
 
@@ -51,15 +57,15 @@ class ResultController:
             self.logger.warning("接收到空的分析結果")
             return
 
-        self.logger.info(f"處理分析結果: {result_data.get('input_type', '未知類型')}")
+        self.logger.info(f"處理分析結果: {result_data.input_type.value}")
 
         # 保存當前結果
         self.current_result = result_data
 
         # 如果有錯誤訊息，顯示警告
-        if result_data.get("messages"):
-            self.logger.warning(f"分析中有警告: {', '.join(result_data['messages'])}")
-            messagebox.showwarning("分析警告", "\n".join(result_data['messages']))
+        if result_data.errors:
+            self.logger.warning(f"分析中有警告: {', '.join(result_data.errors)}")
+            messagebox.showwarning("分析警告", "\n".join(result_data.errors))
 
         # 保存輸入歷史
         if input_data:
@@ -74,7 +80,7 @@ class ResultController:
 
         return result_data
 
-    def save_result_to_history(self, result_data):
+    def save_result_to_history(self, result_data: ResultData):
         """
         將分析結果保存到歷史記錄
 
@@ -88,14 +94,15 @@ class ResultController:
         """
         try:
             # 使用FileManager保存分析結果
-            filepath = self.file_manager.save_analysis_result(result_data)
+            result_dict = result_data.to_dict()
+            filepath = self.file_manager.save_analysis_result(result_dict)
             self.logger.info(f"已儲存分析結果到: {filepath}")
             return filepath
         except Exception as e:
             self.logger.error(f"儲存分析結果失敗: {e}", exc_info=True)
             return None
 
-    def save_to_history(self, result_data, filename=None):
+    def save_to_history(self, result_data: ResultData, filename=None):
         """
         將結果保存到歷史記錄(保留儲存方法)
 
@@ -109,7 +116,6 @@ class ResultController:
         try:
             # 生成時間戳記作為檔案名稱的一部分
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            input_type = result_data.get("input_type", "未知")
 
             # 如果沒有提供檔案名稱，則自動生成
             if not filename:
@@ -123,7 +129,8 @@ class ResultController:
             filepath = os.path.join(self.history_dir, filename)
 
             # 創建一個可存入json的結果副本
-            serializable_data = self._prepare_data_for_json(result_data)
+            result_dict = result_data.to_dict()
+            serializable_data = self._prepare_data_for_json(result_dict)
 
             # 儲存結果到JSON檔案
             with open(filepath, 'w', encoding='utf-8') as f:

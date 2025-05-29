@@ -1,59 +1,115 @@
 #  controller/input_controller.py
 
 import logging
-from ui.settings_module import (
-    digit_var, custom_digit_var,
-    mixed_var, english_position_var,
-    fixed_eng_var, fixed_num_var,
-    default_vars, other_vars
-)
-#  from core.number_analyzer import analyze_number
-#  from utils.validators import is_valid_id, is_valid_digit_length, is_valid_fixed_eng, is_valid_fixed_num
-from utils.validators import validate_all
 
+import tkinter as tk
+
+# from ui.settings_module import (digit_var, custom_digit_var, mixed_var, english_position_var,
+#                                 fixed_num_var, default_vars, other_vars)
+#  from core.number_analyzer import analyze_number
+#  from utils.validators import is_valid_id, is_valid_digit_length, is_valid_fixed_num
+
+from utils.validators import validate_all
+from data.input_data import InputData, InputType, FixDigitsPosition
 # 設定日誌記錄器
 logger = logging.getLogger("數字DNA分析器.InputController")
 
-def collect_input_data(name_var, id_var, phone_var, birth_var,custom_var, use_name, use_id,use_phone,use_birth, use_custom,
-                       digit_var=None, custom_digit_var=None, mixed_var=None,
-                       english_position_var=None, fixed_eng_var=None, fixed_num_var=None,
-                       default_vars=None, other_vars=None):
+
+def collect_input_data(
+    name_var: tk.StringVar,
+    id_var: tk.StringVar,
+    phone_var: tk.StringVar,
+    birth_var: tk.StringVar,
+    custom_var: tk.StringVar,
+    use_name: tk.BooleanVar,
+    use_id: tk.BooleanVar,
+    use_phone: tk.BooleanVar,
+    use_birth: tk.BooleanVar,
+    use_custom: tk.BooleanVar,
+    digit_var: tk.StringVar,
+    custom_digit_var: tk.StringVar,
+    mixed_var: tk.BooleanVar,
+    english_position_var: tk.StringVar,
+    fixed_num_var: tk.StringVar,
+    default_vars: dict[str, tk.BooleanVar],
+    other_vars: dict[str, tk.BooleanVar],
+):
     """
     從UI元素中收集輸入數據
     """
     logger.debug("開始收集用戶輸入資料")
+
+    # 讀取輸入及輸入類型
+    input_type = InputType.NONE
+    input_value = ""
+    if use_name.get():
+        input_type = InputType.NAME
+        input_value = name_var.get()
+    elif use_id.get():
+        input_type = InputType.ID
+        input_value = id_var.get()
+    elif use_phone.get():
+        input_type = InputType.PHONE
+        input_value = phone_var.get()
+    elif use_birth.get():
+        input_type = InputType.BIRTH
+        input_value = birth_var.get()
+    elif use_custom.get():
+        input_type = InputType.CUSTOM
+        input_value = custom_var.get()
+
+    input_value = input_value.strip()
+
+    # 讀取數字位數限制
+    digit_value = digit_var.get()
+    if digit_value == "custom":
+        digits = int(custom_digit_var.get().strip())
+    else:
+        digits = int(digit_value)
+
+    # 讀取固定英數字
+    custom_digits_length = mixed_var.get()
+    english_position = english_position_var.get()
+    fixed_digits_position = FixDigitsPosition.NONE
+    fixed_digits_value: str = ""
+    if custom_digits_length:
+        if english_position == "前":
+            fixed_digits_position = FixDigitsPosition.BEGIN
+        elif english_position == "中":
+            fixed_digits_position = FixDigitsPosition.CENTER
+        elif english_position == "後":
+            fixed_digits_position = FixDigitsPosition.END
+        fixed_digits_value = fixed_num_var.get().strip()
+
+    default_conditions: dict[str, bool] = {}
+    other_conditions: dict[str, bool] = {}
+
+    for k, v in default_vars.items():
+        default_conditions[k] = v.get()
+
+    for k, v in other_vars.items():
+        other_conditions[k] = v.get()
+
+    input_data = InputData(input_type=input_type,
+                           input_value=input_value,
+                           digits_length=digits,
+                           custom_digits_length=custom_digits_length,
+                           fixed_digits_position=fixed_digits_position,
+                           fixed_digits_value=fixed_digits_value,
+                           default_conditions=default_conditions,
+                           other_conditions=other_conditions)
+    return input_data
     input_data = {}
 
-    if use_name.get():
-        input_data["name"] = name_var.get().strip()
-    if use_id.get():
-        input_data["id"] = id_var.get().strip()
-    if use_phone.get():
-        input_data["phone"] = phone_var.get().strip()
-    if use_birth.get():
-        input_data["birth"] = birth_var.get().strip()
-    if use_custom.get():
-        input_data["custom"] = custom_var.get().strip()
-
-    # 讀取數字位數限制 (提供預設值)
-    if digit_var is not None:
-        digit_value = digit_var.get()
-        if custom_digit_var is not None and digit_value == "custom":
-            input_data["digit_length"] = custom_digit_var.get().strip()
-        else:
-            input_data["digit_length"] = digit_value
-    else:
-        input_data["digit_length"] = "4"  # 預設值
-
-    # 讀取英數混合模式設定 (提供預設值)
-    input_data["mix_mode"] = mixed_var.get() if mixed_var is not None else False
-    input_data["english_position"] = english_position_var.get() if english_position_var is not None else "前"
-    input_data["fixed_eng"] = fixed_eng_var.get().strip() if fixed_eng_var is not None else ""
-    input_data["fixed_num"] = fixed_num_var.get().strip() if fixed_num_var is not None else ""
-
     # 設定條件 (提供預設值)
-    input_data["default_conditions"] = {k: v.get() for k, v in default_vars.items()} if default_vars is not None else {}
-    input_data["other_conditions"] = {k: v.get() for k, v in other_vars.items()} if other_vars is not None else {}
+    input_data["default_conditions"] = {
+        k: v.get()
+        for k, v in default_vars.items()
+    } if default_vars is not None else {}
+    input_data["other_conditions"] = {
+        k: v.get()
+        for k, v in other_vars.items()
+    } if other_vars is not None else {}
 
     # 驗證是否有勾選輸入選項
     from controller.analysis_controller import validate_analysis_input
@@ -63,6 +119,7 @@ def collect_input_data(name_var, id_var, phone_var, birth_var,custom_var, use_na
         pass
 
     return input_data
+
 
 # def collect_input_data(name_var, id_var, custom_var, use_name, use_id, use_custom):
 #     logger.debug("開始收集用戶輸入資料")
@@ -84,10 +141,10 @@ def collect_input_data(name_var, id_var, phone_var, birth_var,custom_var, use_na
 #     # 讀取英數混合模式設定
 #     input_data["mix_mode"] = mixed_var.get()
 #     input_data["english_position"] = english_position_var.get()
-#     input_data["fixed_eng"] = fixed_eng_var.get().strip()
 #     input_data["fixed_num"] = fixed_num_var.get().strip()
 #     input_data["default_conditions"] = {k: v.get() for k, v in default_vars.items()}
 #     input_data["other_conditions"] = {k: v.get() for k, v in other_vars.items()}
+
 
 #     return input_data
 def validate_input(input_data):
@@ -107,7 +164,6 @@ def validate_input(input_data):
     if not any(key in input_data for key in ["name", "id", "phone", "birth", "custom"]):
         errors.append("請至少選擇一種輸入類型（姓名、身分證、手機、生日、英數混合）")
 
-
     # 使用validate_all添加其他常規檢查
     errors.extend(validate_all(input_data))
 
@@ -117,6 +173,7 @@ def validate_input(input_data):
             errors.append("使用英數混合模式時，必須指定英文位置或提供固定英文")
 
     return (len(errors) == 0, errors)
+
 
 def prepare_input_for_analysis(input_data):
     """
@@ -170,12 +227,13 @@ def prepare_input_for_analysis(input_data):
     logger.debug(f"已準備分析數據: {prepared_data}")
     return prepared_data
 
-def save_input_history(input_data, file_manager):
+
+def save_input_history(input_data: InputData, file_manager):
     """
     保存輸入歷史
 
     Args:
-        input_data (dict): 輸入數據
+        input_data (InputData): 輸入數據
         file_manager: 文件管理器
 
     Returns:
@@ -183,35 +241,21 @@ def save_input_history(input_data, file_manager):
     """
     try:
         # 確定輸入類型
-        input_type = None
-        value = None
-
-        if "name" in input_data and input_data["name"]:
-            input_type = "name"
-            value = input_data["name"]
-        elif "id" in input_data and input_data["id"]:
-            input_type = "id"
-            value = input_data["id"]
-        elif "custom" in input_data and input_data["custom"]:
-            input_type = "custom"
-            value = input_data["custom"]
-        else:
-            logger.warning("保存輸入歷史失敗: 無有效輸入")
-            return False
+        input_type = input_data.input_type.value
+        value = input_data.input_value
 
         # 準備要保存的歷史記錄數據
         history_data = {
             "value": value,
             "timestamp": None,  # file_manager.save_history會自動添加時間戳
             "settings": {
-                "digit_length": input_data.get("digit_length"),
-                "custom_digit": input_data.get("custom_digit"),
-                "mix_mode": input_data.get("mix_mode"),
-                "english_position": input_data.get("english_position"),
-                "fixed_eng": input_data.get("fixed_eng"),
-                "fixed_num": input_data.get("fixed_num"),
-                "default_conditions": input_data.get("default_conditions", {}),
-                "other_conditions": input_data.get("other_conditions", {})
+                "digit_length": input_data.digits_length,
+                "custom_digit": input_data.custom_digits_length,
+                "mix_mode": input_data.fixed_digits_position == FixDigitsPosition.NONE,
+                "english_position": input_data.fixed_digits_position.value,
+                "fixed_num": input_data.fixed_digits_value,
+                "default_conditions": input_data.default_conditions,
+                "other_conditions": input_data.other_conditions
             }
         }
 

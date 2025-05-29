@@ -10,24 +10,13 @@
 """
 
 # 導入核心功能
-from utils.config import (
-    initialize as init_config,
-    get_config, set_config, save_config,
-    get_path, is_feature_enabled
-)
+from utils.config import (initialize as init_config, get_config, set_config, save_config, get_path,
+                          is_feature_enabled)
 
-from utils.logging import (
-    initialize as init_logging,
-    get_logger, set_level,
-    DEBUG, INFO, WARNING, ERROR, CRITICAL,
-    log_function_call, log_class_methods
-)
+from utils.logging import (initialize as init_logging, get_logger, set_level, DEBUG, INFO, WARNING,
+                           ERROR, CRITICAL, log_function_call, log_class_methods)
 
-from utils.validators import (
-    is_valid_id, is_valid_digit_length,
-    is_valid_fixed_eng, is_valid_fixed_num,
-    validate_all
-)
+from utils.validators import (is_valid_id, is_valid_digit_length, is_valid_fixed_num, validate_all)
 
 # 定義版本
 __version__ = "1.0.0"
@@ -36,20 +25,31 @@ __version__ = "1.0.0"
 __all__ = [
     # 配置管理
     'init_config',
-    'get_config', 'set_config', 'save_config',
-    'get_path', 'is_feature_enabled',
+    'get_config',
+    'set_config',
+    'save_config',
+    'get_path',
+    'is_feature_enabled',
 
     # 日誌工具
     'init_logging',
-    'get_logger', 'set_level',
-    'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL',
-    'log_function_call', 'log_class_methods',
+    'get_logger',
+    'set_level',
+    'DEBUG',
+    'INFO',
+    'WARNING',
+    'ERROR',
+    'CRITICAL',
+    'log_function_call',
+    'log_class_methods',
 
     # 驗證工具
-    'is_valid_id', 'is_valid_digit_length',
-    'is_valid_fixed_eng', 'is_valid_fixed_num',
+    'is_valid_id',
+    'is_valid_digit_length',
+    'is_valid_fixed_num',
     'validate_all'
 ]
+
 
 # 初始化工具模組
 def initialize(config_path=None, log_path=None, log_level=INFO):
