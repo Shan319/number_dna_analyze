@@ -17,6 +17,7 @@ import logging
 import os
 from functools import partial
 
+from data.result_data import ResultData
 from core.field_analyzer import analyze_input
 from core.number_analyzer import keyword_fields
 
@@ -24,7 +25,7 @@ from core.number_analyzer import keyword_fields
 logger = logging.getLogger("數字DNA分析器.ResultModule")
 
 
-def create_result_content(parent: tk.Frame, result_data):
+def create_result_content(parent: tk.Frame, result_data: ResultData | None):
     """
     創建結果顯示框架
 
@@ -54,38 +55,7 @@ def create_result_content(parent: tk.Frame, result_data):
     return frame
 
 
-def create_result_frame(parent):
-    """
-    創建結果顯示框架
-
-    Args:
-        parent frame
-
-    Returns:
-        frame: 結果顯示框架
-    """
-    logger.debug("創建結果顯示框架")
-
-    # 創建主框架
-    frame = tk.LabelFrame(parent, text="分析結果", font=("Arial", 14))
-
-    # 初始資訊標籤
-    initial_label = tk.Label(frame, text="請在左側輸入資料並點選「分析」按鈕", font=("Arial", 12), padx=20, pady=20)
-    initial_label.pack(expand=True)
-
-    # 將更新顯示方法附加到框架
-    frame.update_display = partial(update_display, frame)
-
-    # 將顯示詳細資訊方法附加到框架
-    frame.show_field_details = partial(show_field_details, frame)
-
-    # 將顯示幸運數字方法附加到框架
-    frame.show_lucky_numbers = partial(show_lucky_numbers, frame)
-
-    return frame
-
-
-def update_display(frame, result_data):
+def update_display(frame: tk.Widget, result_data: ResultData | None):
     """
     更新結果顯示內容
 
@@ -97,15 +67,18 @@ def update_display(frame, result_data):
         logger.warning("接收到空的分析結果")
         return
 
-    logger.info(f"更新結果顯示: {result_data.get('input_type', '未知類型')}")
+    input_type = result_data.input_type
+    logger.info(f"更新結果顯示: {input_type.value}")
 
     # 清空現有內容
     for widget in frame.winfo_children():
         widget.destroy()
 
     # 分析類型標頭
-    input_type = result_data.get("input_type", "")
-    header = tk.Label(frame, text=f"分析類型: {input_type}", font=("Arial", 12, "bold"), anchor="w")
+    header = tk.Label(frame,
+                      text=f"分析類型: {input_type.value}",
+                      font=("Arial", 12, "bold"),
+                      anchor="w")
     header.pack(fill="x", padx=10, pady=(10, 5))
 
     # 使用Notebook創建選項卡界面
@@ -133,7 +106,7 @@ def update_display(frame, result_data):
     create_details_tab(details_tab, result_data)
 
 
-def create_basic_tab(tab, result_data):
+def create_basic_tab(tab: ttk.Frame, result_data: ResultData):
     """創建基本統計選項卡"""
     # 原始磁場統計
     tk.Label(tab, text="原始磁場統計", font=("Arial", 11, "bold")).pack(anchor="w", padx=5, pady=(10, 5))
@@ -142,7 +115,7 @@ def create_basic_tab(tab, result_data):
     counts_frame.pack(fill="x", padx=10)
 
     row, col = 0, 0
-    for field, count in result_data.get("counts", {}).items():
+    for field, count in result_data.counts.items():
         field_label = tk.Label(counts_frame, text=f"{field}: {count}", width=15, anchor="w")
         field_label.grid(row=row, column=col, sticky="w", padx=5, pady=2)
 
@@ -152,7 +125,7 @@ def create_basic_tab(tab, result_data):
             row += 1
 
     # 原始磁場序列
-    if "raw_analysis" in result_data:
+    if result_data.raw_analysis:
         tk.Label(tab, text="磁場序列", font=("Arial", 11, "bold")).pack(anchor="w",
                                                                     padx=5,
                                                                     pady=(15, 5))
@@ -161,15 +134,15 @@ def create_basic_tab(tab, result_data):
         sequence_frame.pack(fill="x", padx=10, pady=5)
 
         sequence_text = tk.Text(sequence_frame, height=3, width=40, wrap="word")
-        sequence_text.insert("1.0", result_data["raw_analysis"])
+        sequence_text.insert("1.0", result_data.raw_analysis)
         sequence_text.config(state="disabled")
         sequence_text.pack(fill="x")
 
 
-def create_advanced_tab(tab, result_data):
+def create_advanced_tab(tab: ttk.Frame, result_data: ResultData):
     """創建進階分析選項卡"""
     # 調整日誌
-    if "adjust_log" in result_data and result_data["adjust_log"]:
+    if result_data.adjusted_log:
         tk.Label(tab, text="進階調整規則應用", font=("Arial", 11, "bold")).pack(anchor="w",
                                                                         padx=5,
                                                                         pady=(10, 5))
@@ -178,7 +151,7 @@ def create_advanced_tab(tab, result_data):
         log_frame.pack(fill="x", padx=10, pady=5)
 
         log_text = tk.Text(log_frame, height=4, width=40, wrap="word")
-        log_text.insert("1.0", " ".join(result_data["adjust_log"]))
+        log_text.insert("1.0", " ".join(result_data.adjusted_log))
         log_text.config(state="disabled")
         log_text.pack(fill="x")
     else:
@@ -191,7 +164,7 @@ def create_advanced_tab(tab, result_data):
     adjusted_frame.pack(fill="x", padx=10)
 
     row, col = 0, 0
-    for field, count in result_data.get("adjusted_counts", {}).items():
+    for field, count in result_data.adjusted_counts.items():
         field_label = tk.Label(adjusted_frame, text=f"{field}: {count}", width=15, anchor="w")
         field_label.grid(row=row, column=col, sticky="w", padx=5, pady=2)
 
@@ -204,7 +177,7 @@ def create_advanced_tab(tab, result_data):
     pos_fields = ['天醫', '生氣', '延年', '伏位']
     neg_fields = ['五鬼', '六煞', '禍害', '絕命']
 
-    adjusted_counts = result_data.get("adjusted_counts", {})
+    adjusted_counts = result_data.adjusted_counts
     pos_count = sum(adjusted_counts.get(f, 0) for f in pos_fields)
     neg_count = sum(adjusted_counts.get(f, 0) for f in neg_fields)
     total_count = pos_count + neg_count
@@ -215,24 +188,24 @@ def create_advanced_tab(tab, result_data):
     stats_frame.pack(fill="x", padx=10, pady=5)
 
     tk.Label(stats_frame,
-             text=f"吉星磁場: {pos_count} ({pos_count/total_count*100:.1f}%)"
+             text=f"吉星磁場: {pos_count} ({pos_count / total_count * 100:.1f}%)"
              if total_count else "吉星磁場: 0 (0%)",
              width=25,
              anchor="w").grid(row=0, column=0, sticky="w", padx=5, pady=2)
     tk.Label(stats_frame,
-             text=f"凶星磁場: {neg_count} ({neg_count/total_count*100:.1f}%)"
+             text=f"凶星磁場: {neg_count} ({neg_count / total_count * 100:.1f}%)"
              if total_count else "凶星磁場: 0 (0%)",
              width=25,
              anchor="w").grid(row=0, column=1, sticky="w", padx=5, pady=2)
 
 
-def create_lucky_tab(tab, result_data):
+def create_lucky_tab(tab: ttk.Frame, result_data: ResultData):
     """創建幸運數字選項卡"""
     # 清空現有內容（用於更新時）
     for widget in tab.winfo_children():
         widget.destroy()
 
-    recommendations = result_data.get("recommendations", [])
+    recommendations = result_data.recommendations
 
     if recommendations:
         tk.Label(tab, text="推薦幸運數字", font=("Arial", 11, "bold")).pack(anchor="w",
@@ -268,22 +241,15 @@ def create_lucky_tab(tab, result_data):
             if new_data:
                 create_lucky_tab(tab, new_data)  # 遞歸重新創建
 
-        generate_btn = tk.Button(tab,
-                                 text="生成更多幸運數字",
-                                 command=refresh_numbers)
+        generate_btn = tk.Button(tab, text="生成更多幸運數字", command=refresh_numbers)
         generate_btn.pack(pady=10)
-        # # 生成更多推薦數字的按鈕
-        # generate_btn = tk.Button(tab,
-        #                          text="生成更多幸運數字",
-        #                          command=lambda: generate_more_numbers_and_update(result_data))
-        # generate_btn.pack(pady=10)
     else:
         tk.Label(tab, text="沒有可用的幸運數字推薦", font=("Arial", 11)).pack(expand=True, pady=20)
 
 
-def create_details_tab(tab, result_data):
+def create_details_tab(tab: ttk.Frame, result_data: ResultData):
     """創建磁場詳情選項卡"""
-    field_details = result_data.get("field_details", {})
+    field_details = result_data.field_details
 
     if field_details:
         # 使用Treeview顯示磁場列表
@@ -330,7 +296,7 @@ def create_details_tab(tab, result_data):
         tk.Label(tab, text="沒有可用的磁場詳細資訊", font=("Arial", 11)).pack(expand=True, pady=20)
 
 
-def show_field_details(frame, field_name, details):
+def show_field_details(frame: tk.Frame, field_name, details):
     """顯示特定磁場的詳細資訊"""
     # 此方法需要被frame對象呼叫，用於更新顯示單個磁場的詳細信息
     for widget in frame.winfo_children():
@@ -382,7 +348,7 @@ def show_field_details(frame, field_name, details):
              wraplength=400).pack(anchor="w", padx=20, pady=(0, 10))
 
 
-def show_lucky_numbers(frame, result_data):
+def show_lucky_numbers(frame, result_data: ResultData):
     """顯示幸運數字列表"""
     # 此方法需要被frame對象呼叫，用於單獨顯示幸運數字列表
     for widget in frame.winfo_children():
@@ -399,7 +365,7 @@ def show_lucky_numbers(frame, result_data):
                                                                     padx=10,
                                                                     pady=(5, 15))
 
-    recommendations = result_data.get("recommendations", [])
+    recommendations = result_data.recommendations
     if not recommendations:
         tk.Label(frame, text="沒有可用的幸運數字推薦", font=("Arial", 12)).pack(expand=True)
         return
@@ -523,7 +489,7 @@ def show_number_detail(number_text):
         tk.Label(digit_frame, text=f"{field}：{keywords} ", anchor="w").pack(anchor="w")
 
     # 這裡應該調用數字分析引擎的函數來分析數字，這裡只是簡單示例
-    tk.Label(popup, text="此數字通常由有利的天醫、生氣和延年磁場組成", wraplength=350).pack(anchor="w", padx=30)
+    tk.Label(popup, text="由伏位、天醫、生氣和延年磁場組成", wraplength=350).pack(anchor="w", padx=30)
 
     # 複製按鈕
     tk.Button(popup, text="複製到剪貼簿", command=lambda: copy_to_clipboard(number)).pack(pady=15)
@@ -609,7 +575,7 @@ def show_visualization(result_data):
         messagebox.showerror("錯誤", f"無法顯示視覺化: {e}")
 
 
-def generate_more_numbers_and_update(result_data, update_callback=None):
+def generate_more_numbers_and_update(result_data: ResultData, update_callback=None):
     """生成更多推薦數字並更新數據和UI"""
     try:
         # 調用分析控制器來生成更多幸運數字
@@ -627,52 +593,28 @@ def generate_more_numbers_and_update(result_data, update_callback=None):
             return
 
         # 獲取當前的磁場計數
-        adjusted_counts = result_data.get("adjusted_counts", {})
+        adjusted_counts = result_data.adjusted_counts
 
         # 更新用_獲取當前的數字長度_從現有推薦數字推斷
-        existing_recommendations = result_data.get("recommendations", [])
+        existing_recommendations = result_data.recommendations
         if existing_recommendations:
             digit_length = len(str(existing_recommendations[0]))
         else:
-            #初始設定從 result_data 獲取
-            digit_length = result_data.get("digit_length", 4)
-            if not isinstance(digit_length, int):
-                try:
-                    digit_length = int(digit_length)
-                except:
-                    digit_length = 4
+            digit_length = 4
 
         # 生成新的幸運數字
         new_numbers = generate_lucky_numbers(adjusted_counts, digit_length, count)
 
         if new_numbers:
             # 更新結果數據
-            result_data["recommendations"] = new_numbers
+            result_data.recommendations = new_numbers
 
             # 顯示更新成功
             messagebox.showinfo("成功", f"已生成 {len(new_numbers)} 個新的幸運數字")
-
-            # 刷新顯示_找到當前的parent並重新創建內容
-            if update_callback:
-                update_callback(result_data)
-            else:
-                root = tk._default_root
-                if hasattr(root, 'current_notebook'):
-                    notebook = root.current_notebook
-                    # 找到幸運數字選項卡並重新創建
-                    for i in range(notebook.index("end")):
-                        if notebook.tab(i, "text") == "幸運數字":
-                            # 清空該選項卡
-                            tab_frame = notebook.nametowidget(notebook.tabs()[i])
-                            for widget in tab_frame.winfo_children():
-                                widget.destroy()
-                            # 重新創建內容
-                            create_lucky_tab(tab_frame, result_data)
-                            break
     except Exception as e:
         logger.error(f"生成更多幸運數字失敗: {e}")
         messagebox.showerror("錯誤", f"生成失敗: {e}")
-    return None
+    return result_data
 
 
 def make_result_view(root):
@@ -777,7 +719,7 @@ if __name__ == "__main__":
     root.title("結果顯示模組測試")
     root.geometry("800x600")
 
-    make_result_view(root)
+    # make_result_view(root)
 
     # 運行主循環
     root.mainloop()

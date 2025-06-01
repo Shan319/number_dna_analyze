@@ -6,7 +6,6 @@ digit_var = None
 custom_digit_var = None
 mixed_var = None
 english_position_var = None
-fixed_eng_var = None
 fixed_num_var = None
 default_vars = {}
 other_vars = {}
@@ -79,14 +78,13 @@ def create_magnetic_layout_content(info_frame):
 
 
 def create_settings_frame(root):
-    global digit_var, custom_digit_var, mixed_var, english_position_var, fixed_eng_var
+    global digit_var, custom_digit_var, mixed_var, english_position_var
     global fixed_num_var, default_vars, other_vars
 
     digit_var = tk.StringVar(value="4")
     custom_digit_var = tk.StringVar()
     mixed_var = tk.BooleanVar()
     english_position_var = tk.StringVar(value="前")
-    fixed_eng_var = tk.StringVar()
     fixed_num_var = tk.StringVar()
 
     default_vars = {name: tk.BooleanVar() for name in ["絕命", "五鬼", "六煞", "禍害"]}
@@ -121,6 +119,7 @@ def create_settings_frame(root):
     for i, text in enumerate(default_vars):
         button = tk.Checkbutton(frame, text=f"抵消{text}", variable=default_vars[text])
         button.grid(row=4, column=i + 1, sticky="w")
+        default_vars[text].set(True)
 
     tk.Label(frame, text="其他條件：", font=("Arial", 12, "bold")).grid(row=5, column=0, sticky="w")
     for i, text in enumerate(other_vars):

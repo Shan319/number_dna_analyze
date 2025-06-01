@@ -12,6 +12,8 @@ from collections import Counter
 from typing import Any
 
 # 從核心模組導入分析功能
+from data.input_data import InputData, InputType, FixDigitsPosition
+from data.result_data import ResultData
 from core.field_analyzer import analyze_input, analyze_name_strokes, analyze_mixed_input
 from core.number_analyzer import keyword_fields, magnetic_fields, analyze_magnetic_fields
 from core.recommendation_engine import generate_multiple_lucky_numbers
@@ -19,7 +21,7 @@ from core.recommendation_engine import generate_multiple_lucky_numbers
 logger = logging.getLogger("數字DNA分析器.AnalysisController")
 
 
-def analyze(input_data):
+def analyze(input_data: InputData):
     """
     分析用戶輸入數據
     Args:
@@ -29,96 +31,87 @@ def analyze(input_data):
     """
     logger.info("開始分析用戶輸入數據")
 
-    # 初始化結果字典
-    result = {
-        "input_type": "",
-        "raw_analysis": "",
-        "input_value": "",
-        "counts": {},
-        "adjusted_counts": {},
-        "recommendations": [],
-        "field_details": {},
-        "messages": [],
-        # "timestamp": None
-    }
+    errors: list[str] = []
 
+    input_type = input_data.input_type
+    input_value = input_data.input_value
+    result_data = ResultData(input_type=input_type,
+                             input_value=input_value,
+                             raw_analysis=None,
+                             counts={},
+                             adjusted_counts={},
+                             adjusted_log=[],
+                             recommendations=[],
+                             field_details={},
+                             errors=[])
     try:
-        # 決定輸入類型和分析方法
-        if "name" in input_data and input_data["name"]:
-            result["input_type"] = "姓名"
-            result["input_value"] = input_data["name"]  # 保存原始輸入值
-            raw_result = analyze_name_strokes(input_data["name"])
-        elif "id" in input_data and input_data["id"]:
-            result["input_type"] = "身分證"
-            result["input_value"] = input_data["id"]
-            raw_result = analyze_input(input_data["id"], is_id=True)
-        elif "birth" in input_data and input_data["birth"]:
-            result["input_type"] = "生日"
-            result["input_value"] = input_data["birth"]
-            raw_result = analyze_input((input_data["birth"]).replace("/", ""))
-        elif "phone" in input_data and input_data["phone"]:
-            result["input_type"] = "手機號碼"
-            result["input_value"] = input_data["phone"]
-            raw_result = analyze_input(input_data["phone"])
-        elif "custom" in input_data and input_data["custom"]:
-            # 處理自定義輸入 - 根據混合模式決定分析方法
-            result["input_type"] = "自定義"
-            result["input_value"] = input_data["custom"]
-            if input_data.get("mix_mode", False):
-                raw_result = analyze_mixed_input(input_data["custom"])
-            else:
-                raw_result = analyze_mixed_input(input_data["custom"])
-        else:
-            result["messages"].append("未提供有效的輸入數據")
-            return result
+
+        raw_analysis = None
+
+        if input_type == InputType.NAME:
+            raw_analysis = analyze_name_strokes(input_value)
+        elif input_type == InputType.ID:
+            raw_analysis = analyze_input(input_value, is_id=True)
+        elif input_type == InputType.BIRTH:
+            raw_analysis = analyze_input(input_value.replace("/", ""))
+        elif input_type == InputType.PHONE:
+            raw_analysis = analyze_input(input_value)
+        elif input_type == InputType.CUSTOM:
+            raw_analysis = analyze_mixed_input(input_value)
+
+        result_data.raw_analysis = raw_analysis
 
         # 處理原始分析結果
-        result["raw_analysis"] = raw_result
-        if not raw_result:  # 檢查空結果
-            result["messages"].append("分析結果為空，請檢查輸入數據")
-            return result
+        if not raw_analysis:  # 檢查空結果
+            errors.append("分析結果為空，請檢查輸入數據")
+            return result_data
 
-        magnetic_fields_list = raw_result.split()
-
-        # # 計算磁場頻率
-        # base_counts = Counter(magnetic_fields_list)
-        # result["counts"] = dict(base_counts)
-
-        # # 進階分析 - 套用規則調整磁場計數
-        # adjusted_counts, adjust_log = apply_advanced_rules(magnetic_fields_list)
-        # result["adjusted_counts"] = adjusted_counts
-        # result["adjust_log"] = adjust_log
-
+        magnetic_fields_list = raw_analysis.split()
         # 使用 analyze_magnetic_fields 進行磁場分析
         base_counts, adjusted_counts, adjust_log = analyze_magnetic_fields(magnetic_fields_list)
+        result_data.counts = base_counts
+        result_data.adjusted_counts = adjusted_counts
+        result_data.adjusted_log = adjust_log
 
-        # 保存分析結果
-        result["counts"] = dict(base_counts)
-        result["adjusted_counts"] = adjusted_counts
-        result["adjust_log"] = adjust_log
-
-        # 生成推薦數字
-        digit_length = int(input_data.get("digit_length", 4))
-        if input_data.get("digit_length") == "custom":
-            try:
-                digit_length = int(input_data.get("custom_digit", 4))
-            except ValueError:
-                digit_length = 4
-                result["messages"].append("自定義位數格式錯誤，使用預設值4")
+        digits_length = int(input_data.digits_length)
+        fixed_digits_position = input_data.fixed_digits_position
+        fixed_digits_value = input_data.fixed_digits_value
+        if fixed_digits_position != FixDigitsPosition.NONE:
+            digits_length = digits_length - len(fixed_digits_value)
 
         # 生成推薦數字
-        result["recommendations"] = generate_lucky_numbers(adjusted_counts, digit_length)
+        recommendations = generate_lucky_numbers(adjusted_counts, digits_length)
+
+        # 插入固定英數字
+        if fixed_digits_position != FixDigitsPosition.NONE:
+            new_recommendations = []
+            for recommendation in recommendations:
+                prev = ""
+                post = ""
+                if fixed_digits_position == FixDigitsPosition.BEGIN:
+                    post = recommendation
+                elif fixed_digits_position == FixDigitsPosition.CENTER:
+                    prev = recommendation[:(digits_length + 1) // 2]
+                    post = recommendation[(digits_length + 1) // 2:]
+                elif fixed_digits_position == FixDigitsPosition.END:
+                    prev = recommendation
+                new_recommendation = prev + fixed_digits_value + post
+                new_recommendations.append(new_recommendation)
+
+            result_data.recommendations = new_recommendations
+        else:
+            result_data.recommendations = recommendations
 
         # 添加磁場詳細資訊
-        result["field_details"] = generate_field_details(adjusted_counts)
+        result_data.field_details = generate_field_details(adjusted_counts)
 
-        logger.info(f"分析完成: {result['input_type']}")
-        return result
+        logger.info(f"分析完成: {result_data.input_type}")
+        return result_data
 
     except Exception as e:
         logger.error(f"分析過程發生錯誤: {e}", exc_info=True)
-        result["messages"].append(f"分析錯誤: {str(e)}")
-        return result
+        errors.append(f"分析錯誤: {str(e)}")
+        return result_data
 
 
 def validate_analysis_input(input_data: dict[str, Any]) -> tuple[bool, list[str]]:

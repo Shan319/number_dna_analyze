@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import tkinter as tk
 from tkinter import ttk
 
+from data.result_data import ResultData
 from ui.result_module import create_result_content
 
 HISTORY_PATH = os.path.join("data", "history")
@@ -70,7 +71,7 @@ class HistoryView:
         index = all_items.index(item)
         return index
 
-    def display_result(self, result_data: dict | None):
+    def display_result(self, result_dict: dict | None):
         """
         更新右側結果
 
@@ -81,6 +82,10 @@ class HistoryView:
         for widget in self.right_frame.winfo_children():
             widget.destroy()
 
+        if result_dict:
+            result_data = ResultData.from_dict(result_dict)
+        else:
+            result_data = None
         result_frame1 = create_result_content(self.right_frame, result_data)
         result_frame1.pack(expand=True, fill="both", padx=10, pady=10)
 
@@ -90,7 +95,7 @@ class HistoryView:
         item = self.tree.identify_row(event.y)
         if item:
             index = self.get_index(item)
-            self.display_result(result_data=self.history[index].raw)
+            self.display_result(result_dict=self.history[index].raw)
 
     def show_context_menu(self, event: tk.Event):
         """顯示右鍵選單"""

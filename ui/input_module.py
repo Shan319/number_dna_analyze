@@ -34,14 +34,14 @@ def create_input_frame(parent: tk.Frame, right_frame: tk.Frame, history_update_c
     def on_analyze_click():  # 點擊「分析」按鈕，執行on_analyze_click函數
         # 從 settings_module 導入所有設定變量
         from ui.settings_module import (digit_var, custom_digit_var, mixed_var,
-                                        english_position_var, fixed_eng_var, fixed_num_var,
-                                        default_vars, other_vars)
+                                        english_position_var, fixed_num_var, default_vars,
+                                        other_vars)
 
         # 收集輸入資料 (傳入所有設定變量)
         data = collect_input_data(name_var, id_var, phone_var, birth_var, custom_var, use_name,
                                   use_id, use_phone, use_birth, use_custom, digit_var,
-                                  custom_digit_var, mixed_var, english_position_var, fixed_eng_var,
-                                  fixed_num_var, default_vars, other_vars)
+                                  custom_digit_var, mixed_var, english_position_var, fixed_num_var,
+                                  default_vars, other_vars)
 
         errors = validate_all(data)  # 檢查輸入是否合法
         if errors:
@@ -49,6 +49,9 @@ def create_input_frame(parent: tk.Frame, right_frame: tk.Frame, history_update_c
             return  # 停止執行，避免分析錯誤資料
         # 分析輸入資料
         result = analyze(data)
+        if result.errors:
+            messagebox.showerror("輸入錯誤", "\n".join(errors))
+            return  # 停止執行，避免分析錯誤資料
 
         # 使用結果控制器處理結果 (保存並顯示結果)
         from controller.result_controller import ResultController
@@ -79,8 +82,8 @@ def create_input_frame(parent: tk.Frame, right_frame: tk.Frame, history_update_c
     def on_reset_click():  # 點擊「重置」按鈕，執行on_reset_click函數
         # 從 settings_module 導入所有設定變量
         from ui.settings_module import (digit_var, custom_digit_var, mixed_var,
-                                        english_position_var, fixed_eng_var, fixed_num_var,
-                                        default_vars, other_vars)
+                                        english_position_var, fixed_num_var, default_vars,
+                                        other_vars)
         name_var.set("")
         id_var.set("")
         custom_var.set("")
@@ -96,11 +99,10 @@ def create_input_frame(parent: tk.Frame, right_frame: tk.Frame, history_update_c
         custom_digit_var.set("")
         mixed_var.set(False)
         english_position_var.set("前")
-        fixed_eng_var.set("")
         fixed_num_var.set("")
 
         for var in default_vars.values():
-            var.set(False)
+            var.set(True)
         for var in other_vars.values():
             var.set(False)
 
@@ -108,15 +110,14 @@ def create_input_frame(parent: tk.Frame, right_frame: tk.Frame, history_update_c
         try:
             # 確保所有變量都有定義
             from ui.settings_module import (digit_var, custom_digit_var, mixed_var,
-                                            english_position_var, fixed_eng_var, fixed_num_var,
-                                            default_vars, other_vars)
+                                            english_position_var, fixed_num_var, default_vars,
+                                            other_vars)
 
             settings = {
                 "digit_length": digit_var.get() if digit_var else "4",
                 "custom_digit": custom_digit_var.get() if custom_digit_var else "",
                 "mix_mode": mixed_var.get() if mixed_var else False,
                 "english_position": english_position_var.get() if english_position_var else "前",
-                "fixed_eng": fixed_eng_var.get() if fixed_eng_var else "",
                 "fixed_num": fixed_num_var.get() if fixed_num_var else "",
                 "default_conditions": {
                     k: v.get()
@@ -138,11 +139,10 @@ def create_input_frame(parent: tk.Frame, right_frame: tk.Frame, history_update_c
             # 記錄錯誤
             print(f"儲存設定失敗: {e}")
 
-    
     def load_settings():  # 載入設定
         from ui.settings_module import (digit_var, custom_digit_var, mixed_var,
-                                        english_position_var, fixed_eng_var, fixed_num_var,
-                                        default_vars, other_vars)
+                                        english_position_var, fixed_num_var, default_vars,
+                                        other_vars)
         try:
             with open(settings_path, "r", encoding="utf-8") as f:
                 settings = json.load(f)
@@ -151,7 +151,6 @@ def create_input_frame(parent: tk.Frame, right_frame: tk.Frame, history_update_c
             custom_digit_var.set(settings.get("custom_digit", ""))
             mixed_var.set(settings.get("mix_mode", False))
             english_position_var.set(settings.get("english_position", "前"))
-            fixed_eng_var.set(settings.get("fixed_eng", ""))
             fixed_num_var.set(settings.get("fixed_num", ""))
 
             for key, val in settings.get("default_conditions", {}).items():
