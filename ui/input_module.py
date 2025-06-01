@@ -102,7 +102,7 @@ def create_input_frame(parent: tk.Frame, right_frame: tk.Frame, history_update_c
         fixed_num_var.set("")
 
         for var in default_vars.values():
-            var.set(False)
+            var.set(True)
         for var in other_vars.values():
             var.set(False)
 

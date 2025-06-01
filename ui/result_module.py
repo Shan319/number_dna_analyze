@@ -489,7 +489,7 @@ def show_number_detail(number_text):
         tk.Label(digit_frame, text=f"{field}：{keywords} ", anchor="w").pack(anchor="w")
 
     # 這裡應該調用數字分析引擎的函數來分析數字，這裡只是簡單示例
-    tk.Label(popup, text="此數字通常由有利的天醫、生氣和延年磁場組成", wraplength=350).pack(anchor="w", padx=30)
+    tk.Label(popup, text="由伏位、天醫、生氣和延年磁場組成", wraplength=350).pack(anchor="w", padx=30)
 
     # 複製按鈕
     tk.Button(popup, text="複製到剪貼簿", command=lambda: copy_to_clipboard(number)).pack(pady=15)

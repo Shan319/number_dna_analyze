@@ -119,6 +119,7 @@ def create_settings_frame(root):
     for i, text in enumerate(default_vars):
         button = tk.Checkbutton(frame, text=f"抵消{text}", variable=default_vars[text])
         button.grid(row=4, column=i + 1, sticky="w")
+        default_vars[text].set(True)
 
     tk.Label(frame, text="其他條件：", font=("Arial", 12, "bold")).grid(row=5, column=0, sticky="w")
     for i, text in enumerate(other_vars):

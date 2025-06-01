@@ -92,7 +92,7 @@ def is_valid_digit_length(s: str | int):
 
 def is_valid_fixed_num(s: str):
     """檢查固定數字是否為 1~4 位數字"""
-    return (s.isalnum() and 1 <= len(s) <= 4)
+    return (s.isalnum() and 1 <= len(s))
 
 
 def validate_all(input_data: InputData):
@@ -126,7 +126,7 @@ def validate_all(input_data: InputData):
 
     if input_data.fixed_digits_position != FixDigitsPosition.NONE:
         if not is_valid_fixed_num(input_data.fixed_digits_value):
-            errors.append("固定英數字必須為 1~4 位")
+            errors.append("固定英數字必須至少 1 位")
         elif len(input_data.fixed_digits_value) >= digits_length:
             errors.append("固定英數字的長度應比總位數小 2 位以上")
 
