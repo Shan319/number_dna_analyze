@@ -1,12 +1,12 @@
 import os
 import datetime
 import json
+from typing import Callable
 from dataclasses import dataclass
 import tkinter as tk
 from tkinter import ttk
 
 from data.result_data import ResultData
-from ui.result_module import create_result_content
 
 HISTORY_PATH = os.path.join("data", "history")
 DATE_FORMAT = "%Y%m%d_%H%M%S"
@@ -20,16 +20,17 @@ class HistoryData:
 
 
 class HistoryView:
-    """
-    顯示歷史紀錄清單 (Treeview)。可以從清單內點選，即可在結果畫面顯示當時的分析結果。
 
-    Arguments:
-        parent (tk.Frame): 此 Treeview 要放在哪個 Frame 內
-        right_frame (tk.Frame): 此 TreeView 要連動哪一個 Frame 更新
-    """
+    def __init__(self, parent: tk.Widget) -> None:
+        """顯示歷史紀錄清單 (Treeview)。可以從清單內點選，即可在結果畫面顯示當時的分析結果。
 
-    def __init__(self, parent: tk.Frame, right_frame: tk.Frame) -> None:
-        self.right_frame = right_frame
+        Parameters
+        ----------
+        parent : tk.Widget
+            此 Treeview 要放在哪個 Frame 內
+        """
+
+        self.notify_update_result_view: Callable[[ResultData | None], None] | None = None
 
         frame = tk.Frame(parent)
         self.frame = frame
@@ -62,7 +63,7 @@ class HistoryView:
 
         # 載入歷史資料
         self.history: list[HistoryData] = []
-        self.update_history_data()
+        self.update_display()
 
     def get_index(self, item: str):
         """回覆該 item 是第幾筆資料"""
@@ -75,18 +76,16 @@ class HistoryView:
         更新右側結果
 
         Parameters:
-            result_data (dict | None): 用來更新右側結果的資料
+            result_dict (dict | None): 用來更新右側結果的資料
         """
-        # 清空現有內容
-        for widget in self.right_frame.winfo_children():
-            widget.destroy()
 
         if result_dict:
-            result_data = ResultData.from_dict(result_dict)
+            result_data = ResultData(**result_dict)
         else:
             result_data = None
-        result_frame1 = create_result_content(self.right_frame, result_data)
-        result_frame1.pack(expand=True, fill="both", padx=10, pady=10)
+
+        if self.notify_update_result_view:
+            self.notify_update_result_view(result_data)
 
     def on_single_click(self, event: tk.Event):
         """單擊事件"""
@@ -130,10 +129,10 @@ class HistoryView:
             full_path = self.history[index].path
             os.remove(full_path)
 
-        self.update_history_data()
+        self.update_display()
         self.display_result(None)
 
-    def update_history_data(self) -> None:
+    def update_display(self) -> None:
         """重新載入歷史資料"""
         history: list[HistoryData] = []
 

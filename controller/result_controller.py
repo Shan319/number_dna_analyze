@@ -12,6 +12,7 @@ import logging
 import json
 import os
 import datetime
+from typing import Callable
 from tkinter import messagebox
 
 from data.input_data import InputData
@@ -41,10 +42,7 @@ class ResultController:
         #                                "data", "history")
         # os.makedirs(self.history_dir, exist_ok=True)
 
-    def process_result(self,
-                       result_data: ResultData,
-                       input_data: InputData | None = None,
-                       display_callback=None):
+    def process_result(self, result_data: ResultData, input_data: InputData | None = None):
         """
         處理分析結果並交由UI顯示
 
@@ -71,10 +69,6 @@ class ResultController:
         if input_data:
             save_input_history(input_data, self.file_manager)
 
-        # 如果提供了顯示，調用更新UI
-        if display_callback:
-            display_callback(result_data)
-
         # 自動保存到歷史記錄
         self.save_to_history(result_data)
 
@@ -94,7 +88,7 @@ class ResultController:
         """
         try:
             # 使用FileManager保存分析結果
-            result_dict = result_data.to_dict()
+            result_dict = result_data.model_dump()
             filepath = self.file_manager.save_analysis_result(result_dict)
             self.logger.info(f"已儲存分析結果到: {filepath}")
             return filepath
@@ -129,7 +123,7 @@ class ResultController:
             filepath = os.path.join(self.history_dir, filename)
 
             # 創建一個可存入json的結果副本
-            result_dict = result_data.to_dict()
+            result_dict = result_data.model_dump()
             serializable_data = self._prepare_data_for_json(result_dict)
 
             # 儲存結果到JSON檔案

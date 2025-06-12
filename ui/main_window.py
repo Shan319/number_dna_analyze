@@ -1,8 +1,10 @@
 # ui/main_window.py
 import tkinter as tk
+
 from ui.input_module import InputView
 from ui.history_module import HistoryView
-from ui.result_module import create_result_content
+from ui.result_module import ResultView
+from data.result_data import ResultData
 
 
 class MainView:
@@ -23,27 +25,41 @@ class MainView:
         content_frame = tk.Frame(self.root, bg="#fefae0")
         content_frame.pack(fill="both", expand=True, padx=20)
 
-        # 左邊：輸入框區域
+        # 左邊
         left_frame = tk.Frame(content_frame)
         left_frame.pack(side="left", fill="y", padx=10, pady=10)
 
-        # 右邊：結果顯示區域
+        # 左邊：輸入區域
+        self.input_frame = InputView(left_frame)
+        self.input_frame.frame.pack(padx=10, pady=10, fill="x")
+
+        # 左邊：歷史紀錄區域
+        self.history_view = HistoryView(left_frame)
+        self.history_view.frame.pack(padx=10, pady=10, fill="x")
+
+        # 右邊
         right_frame = tk.Frame(content_frame)
         right_frame.pack(side="left", expand=True, fill="both", padx=10, pady=10)
 
-        result_frame = create_result_content(right_frame, None)
-        result_frame.pack(expand=True, fill="both", padx=10, pady=10)
+        # 右邊：結果顯示區域
+        self.result_view = ResultView(right_frame)
+        self.result_view.frame.pack(expand=True, fill="both", padx=10, pady=10)
 
-        # 歷史紀錄區域
-        history_view = HistoryView(left_frame, right_frame)
-        history_frame = history_view.frame
+        # Hook notifications.
+        self.input_frame.notify_update_history_view = self.notify_update_history_view
+        self.input_frame.notify_update_result_view = self.notify_update_result_view
+        self.history_view.notify_update_result_view = self.notify_update_result_view
 
-        # 傳 result_frame 給輸入模組（用於顯示分析結果）
-        input_frame = InputView(left_frame, right_frame, history_view.update_history_data)
-        input_frame.frame.pack(padx=10, pady=10, fill="x")
+    def notify_update_result_view(self, result_data: ResultData | None = None):
+        self.result_view.result_data = result_data
+        self.result_view.update_display()
 
-        history_frame.pack(padx=10, pady=10, fill="x")
-        pass
+    def notify_update_history_view(self):
+        self.history_view.update_display()
+
+    def notify_update_input_view(self, result_data: ResultData | None = None):
+        self.result_view.result_data = result_data
+        self.result_view.update_display()
 
     def mainloop(self):
         self.root.mainloop()

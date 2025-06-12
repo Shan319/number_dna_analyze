@@ -35,18 +35,22 @@ class FileManager:
     """檔案管理類，負責檔案讀寫操作"""
 
     def __init__(self,
-                 base_dir: str = None,
-                 history_dir: str = None,
-                 resources_dir: str = None,
+                 base_dir: str | None = None,
+                 history_dir: str | None = None,
+                 resources_dir: str | None = None,
                  enable_encryption: bool = True):
-        """
-        初始化檔案管理器
+        """檔案管理器
 
-        Args:
-            base_dir (str): 應用程式基礎目錄，如果為None則使用預設路徑
-            history_dir (str): 歷史紀錄儲存目錄，如果為None則使用預設路徑
-            resources_dir (str): 資源檔案目錄，如果為None則使用預設路徑
-            enable_encryption (bool): 是否啟用加密功能
+        Parameters
+        ----------
+        base_dir : str | None, optional
+            應用程式基礎目錄，如果為 None 則使用預設路徑
+        history_dir : str | None, optional
+            歷史紀錄儲存目錄，如果為 None 則使用預設路徑
+        resources_dir : str | None, optional
+            資源檔案目錄，如果為 None 則使用預設路徑
+        enable_encryption : bool, optional
+            是否啟用加密功能，預設為 True
         """
         self.logger = logging.getLogger("數字DNA分析器.FileManager")
 
@@ -301,9 +305,11 @@ class FileManager:
             self.logger.error(f"儲存歷史紀錄失敗: {file_path}, 錯誤: {e}")
             raise
 
-    def load_history(self,
-                     history_type: str,
-                     filename: str = None) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+    def load_history(
+        self,
+        history_type: str,
+        filename: str | None = None,
+    ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """
         讀取歷史紀錄
 
@@ -486,7 +492,6 @@ class FileManager:
         return self.load_history("analysis")
 
     # ------ 匯入匯出功能 ------
-
     def export_to_json(self,
                        data: Dict[str, Any],
                        filepath: str,

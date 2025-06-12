@@ -11,13 +11,12 @@ from data.input_data import InputData, InputType
 from controller.analysis_controller import analyze
 from utils.validators import validate_all
 from ui.settings_module import SettingView
-from ui.result_module import create_result_content
+from ui.result_module import ResultView
 
 
 class InputView:
 
-    def __init__(self, parent: tk.Widget, right_frame: tk.Widget,
-                 history_update_cb: Callable) -> None:
+    def __init__(self, parent: tk.Widget) -> None:
         """輸入畫面模組。
 
         Parameters
@@ -30,8 +29,8 @@ class InputView:
             歷史畫面的更新 callback
         """
 
-        self.right_frame = right_frame
-        self.history_update_cb = history_update_cb
+        self.notify_update_history_view: Callable | None = None
+        self.notify_update_result_view: Callable | None = None
 
         frame = tk.LabelFrame(parent, text="輸入區", font=("Arial", 14))
         self.frame = frame
@@ -154,8 +153,8 @@ class InputView:
             return  # 停止執行，避免分析錯誤資料
 
         # 分析輸入資料
-        result = analyze(input_data)
-        if result.errors:
+        result_data = analyze(input_data)
+        if result_data.errors:
             messagebox.showerror("輸入錯誤", "\n".join(errors))
             return  # 停止執行，避免分析錯誤資料
 
@@ -163,21 +162,16 @@ class InputView:
         from controller.result_controller import ResultController
         result_controller = ResultController()
 
-        # 定義顯示函數，更新右側結果框架
-        def display_result(result_data):
-            # 清空現有內容
-            for widget in self.right_frame.winfo_children():
-                widget.destroy()
-
-            result_frame1 = create_result_content(self.right_frame, result_data)
-            result_frame1.pack(expand=True, fill="both", padx=10, pady=10)
-
         # 處理結果 - 這會自動保存分析結果和輸入歷史
-        result_controller.process_result(result_data=result,
-                                         input_data=input_data,
-                                         display_callback=display_result)
+        result_controller.process_result(result_data=result_data, input_data=input_data)
 
-        self.history_update_cb()
+        # 通知更新結果畫面
+        if self.notify_update_result_view:
+            self.notify_update_result_view(result_data)
+
+        # 通知更新歷史畫面
+        if self.notify_update_history_view:
+            self.notify_update_history_view()
 
         # 提示用戶分析完成
         messagebox.showinfo("分析完成", "分析已完成，結果已保存到歷史記錄!")
