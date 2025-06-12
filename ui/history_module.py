@@ -14,7 +14,6 @@ DATE_FORMAT = "%Y%m%d_%H%M%S"
 
 @dataclass
 class HistoryData:
-
     path: str
     date: datetime.datetime
     raw: dict

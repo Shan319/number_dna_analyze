@@ -25,7 +25,7 @@ from core.number_analyzer import keyword_fields
 logger = logging.getLogger("數字DNA分析器.ResultModule")
 
 
-def create_result_content(parent: tk.Frame, result_data: ResultData | None):
+def create_result_content(parent: tk.Widget, result_data: ResultData | None):
     """
     創建結果顯示框架
 

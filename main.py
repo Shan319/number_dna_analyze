@@ -7,51 +7,14 @@
 import os
 import sys
 import logging
-import subprocess
 from pathlib import Path
-import tkinter as tk
 from tkinter import messagebox
 
-
-# 自動更新 pip（很重要）
-def upgrade_pip():
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
-    except subprocess.CalledProcessError as e:
-        print(f"❌ pip 更新失敗: {e}")
-        messagebox.showerror("錯誤", f"pip 更新失敗，請手動執行：\npython -m pip install --upgrade pip")
-        sys.exit(1)
-
-
-# 自動安裝 requirements.txt
-def ensure_requirements():
-    requirements_path = Path(__file__).parent / "requirements.txt"
-    if requirements_path.exists():
-        try:
-            subprocess.check_call(
-                [sys.executable, "-m", "pip", "install", "-r",
-                 str(requirements_path)])
-        except subprocess.CalledProcessError as e:
-            print(f"❌ pip 安裝失敗: {e}")
-            messagebox.showerror("錯誤", f"套件安裝失敗，請手動執行：\n\npip install -r requirements.txt")
-            sys.exit(1)
-    else:
-        print("❌ 找不到 requirements.txt！請確認檔案存在於同資料夾")
-        messagebox.showerror("錯誤", "找不到 requirements.txt！")
-        sys.exit(1)
-
-
+# 載入 UI 主畫面
+from ui.main_window import MainView
 # 執行 pip 升級與安裝套件
 # upgrade_pip()
 # ensure_requirements()
-
-# 載入 UI 主畫面
-try:
-    from ui.main_window import main as ui_main
-except ImportError as e:
-    print(f"❌ 匯入 UI 模組失敗: {e}")
-    messagebox.showerror("錯誤", f"無法載入 UI 模組：{e}")
-    sys.exit(1)
 
 # 設定目錄與資源位置
 BASE_DIR = Path(__file__).resolve().parent
@@ -101,12 +64,8 @@ def main():
         messagebox.showerror("初始化失敗", "缺少必要的資源檔案。請確認 resources 資料夾下的檔案齊全。")
         sys.exit(1)
 
-    try:
-        ui_main()
-    except Exception as e:
-        logger.critical(f"程式啟動錯誤: {e}", exc_info=True)
-        messagebox.showerror("錯誤", f"應用程式啟動失敗：{e}")
-        sys.exit(1)
+    mainview = MainView()
+    mainview.mainloop()
 
 
 if __name__ == "__main__":
