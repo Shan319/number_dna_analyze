@@ -2,9 +2,10 @@ import os
 import datetime
 import json
 from typing import Callable
-from dataclasses import dataclass
 import tkinter as tk
 from tkinter import ttk
+
+from pydantic import BaseModel
 
 from data.result_data import ResultData
 
@@ -12,11 +13,10 @@ HISTORY_PATH = os.path.join("data", "history")
 DATE_FORMAT = "%Y%m%d_%H%M%S"
 
 
-@dataclass
-class HistoryData:
+class HistoryData(BaseModel):
     path: str
     date: datetime.datetime
-    raw: dict
+    raw: ResultData
 
 
 class HistoryView:
@@ -71,18 +71,13 @@ class HistoryView:
         index = all_items.index(item)
         return index
 
-    def display_result(self, result_dict: dict | None):
+    def display_result(self, result_data: ResultData | None):
         """
         更新右側結果
 
         Parameters:
-            result_dict (dict | None): 用來更新右側結果的資料
+            result_data (ResultData | None): 用來更新右側結果的資料
         """
-
-        if result_dict:
-            result_data = ResultData(**result_dict)
-        else:
-            result_data = None
 
         if self.notify_update_result_view:
             self.notify_update_result_view(result_data)
@@ -93,7 +88,7 @@ class HistoryView:
         item = self.tree.identify_row(event.y)
         if item:
             index = self.get_index(item)
-            self.display_result(result_dict=self.history[index].raw)
+            self.display_result(self.history[index].raw)
 
     def show_context_menu(self, event: tk.Event):
         """顯示右鍵選單"""
@@ -158,7 +153,7 @@ class HistoryView:
                     raw = json.load(file)
 
                 # 新增資料
-                history_data = HistoryData(full_path, date, raw)
+                history_data = HistoryData(path=full_path, date=date, raw=raw)
                 history.append(history_data)
             except Exception as e:
                 print(e, "This file can't not be read!")
@@ -175,7 +170,7 @@ class HistoryView:
             date = history_data.date
             raw = history_data.raw
             date_string = date.strftime("%Y/%m/%d %H:%M:%S")
-            input_type = raw.get("input_type")
-            input_value = raw.get("input_value", "")
+            input_type = raw.input_data.input_type.value
+            input_value = raw.input_data.input_value
             contents = f"{input_type} {input_value}"
             self.tree.insert("", "end", values=(date_string, contents))

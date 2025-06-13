@@ -13,7 +13,7 @@ from typing import Any
 
 # 從核心模組導入分析功能
 from data.input_data import InputData, InputType, FixDigitsPosition
-from data.result_data import ResultData
+from data.result_data import ResultData, FieldDetail
 from core.field_analyzer import analyze_input, analyze_name_strokes, analyze_mixed_input
 from core.number_analyzer import keyword_fields, magnetic_fields, analyze_magnetic_fields
 from core.recommendation_engine import generate_multiple_lucky_numbers
@@ -35,8 +35,7 @@ def analyze(input_data: InputData):
 
     input_type = input_data.input_type
     input_value = input_data.input_value
-    result_data = ResultData(input_type=input_type,
-                             input_value=input_value,
+    result_data = ResultData(input_data=input_data,
                              raw_analysis=None,
                              counts={},
                              adjusted_counts={},
@@ -45,7 +44,6 @@ def analyze(input_data: InputData):
                              field_details={},
                              errors=[])
     try:
-
         raw_analysis = None
 
         if input_type == InputType.NAME:
@@ -103,9 +101,12 @@ def analyze(input_data: InputData):
             result_data.recommendations = recommendations
 
         # 添加磁場詳細資訊
-        result_data.field_details = generate_field_details(adjusted_counts)
+        # result_data.field_details = generate_field_details(adjusted_counts)
+        field_details = generate_field_details(adjusted_counts)
+        for field_name, field_detail in field_details.items():
+            result_data.field_details[field_name] = FieldDetail(**field_detail)
 
-        logger.info(f"分析完成: {result_data.input_type}")
+        logger.info(f"分析完成: {result_data.input_data.input_type}")
         return result_data
 
     except Exception as e:

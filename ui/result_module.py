@@ -15,7 +15,7 @@ import logging
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 
-from data.result_data import ResultData
+from data.result_data import ResultData, FieldDetail
 from ui.display_module import show_field_visualization
 from controller.analysis_controller import generate_lucky_numbers
 from core.field_analyzer import analyze_input
@@ -65,7 +65,7 @@ class ResultView:
             initial_label.pack(expand=True)
         else:
             result_data = self.result_data
-            input_type = result_data.input_type
+            input_type = result_data.input_data.input_type
             logger.info(f"更新結果顯示: {input_type.value}")
 
             # 分析類型標頭
@@ -368,11 +368,11 @@ class ResultView:
 
             # 填充數據
             for field, details in field_details.items():
-                keywords = details.get("keywords", [])
+                keywords: str | list[str] = details.keywords
                 if isinstance(keywords, list):
                     keywords = "、".join(keywords)
 
-                tree_view.insert("", "end", values=(field, details.get("count", 0), keywords))
+                tree_view.insert("", "end", values=(field, details.count, keywords))
 
             # 添加滾動條
             scrollbar = tk.Scrollbar(frame, orient="vertical", command=tree_view.yview)
@@ -387,13 +387,6 @@ class ResultView:
             tk.Label(tab, text="沒有可用的磁場詳細資訊", font=("Arial", 11)).pack(expand=True, pady=20)
 
     def _on_details_tree_view_double_clicked(self, event: tk.Event):
-        """_summary_
-
-        Parameters
-        ----------
-        event : tk.Event
-            _description_
-        """
         if self.detail_tree_view is None:
             return
         if self.result_data is None:
@@ -407,7 +400,7 @@ class ResultView:
             field_name, details = list(self.result_data.field_details.items())[index]
             self._show_field_details_popup(field_name, details)
 
-    def _show_field_details_popup(self, field_name, details):
+    def _show_field_details_popup(self, field_name: str, details: FieldDetail):
         """在彈出窗口中顯示磁場詳細資訊"""
 
         # 創建彈出窗口
@@ -417,7 +410,7 @@ class ResultView:
         popup.resizable(False, False)
 
         # 關鍵字
-        keywords = details.get("keywords", [])
+        keywords: str | list[str] = details.keywords
         if isinstance(keywords, list):
             keywords = "、".join(keywords)
 
@@ -427,34 +420,37 @@ class ResultView:
         tk.Label(popup, text=keywords, wraplength=400).pack(anchor="w", padx=30, pady=(0, 10))
 
         # 優勢
+        strengths = details.strengths
+        strengths = strengths if strengths else "無資料"
         tk.Label(popup, text="優勢:", font=("Arial", 12, "bold")).pack(anchor="w",
                                                                      padx=20,
                                                                      pady=(10, 0))
-        tk.Label(popup, text=details.get("strengths", "無資料"), wraplength=400).pack(anchor="w",
-                                                                                   padx=30,
-                                                                                   pady=(0, 10))
+
+        tk.Label(popup, text=strengths, wraplength=400).pack(anchor="w", padx=30, pady=(0, 10))
 
         # 弱點
+        weaknesses = details.weaknesses
+        weaknesses = weaknesses if weaknesses else "無資料"
         tk.Label(popup, text="弱點:", font=("Arial", 12, "bold")).pack(anchor="w",
                                                                      padx=20,
                                                                      pady=(10, 0))
-        tk.Label(popup, text=details.get("weaknesses", "無資料"), wraplength=400).pack(anchor="w",
-                                                                                    padx=30,
-                                                                                    pady=(0, 10))
+        tk.Label(popup, text=weaknesses, wraplength=400).pack(anchor="w", padx=30, pady=(0, 10))
 
         # 財務建議
+        financial = details.financial_strategy
+        financial = financial if financial else "無資料"
         tk.Label(popup, text="財務建議:", font=("Arial", 12, "bold")).pack(anchor="w",
                                                                        padx=20,
                                                                        pady=(10, 0))
-        tk.Label(popup, text=details.get("financial_strategy", "無資料"),
-                 wraplength=400).pack(anchor="w", padx=30, pady=(0, 10))
+        tk.Label(popup, text=financial, wraplength=400).pack(anchor="w", padx=30, pady=(0, 10))
 
         # 關係建議
+        relationship = details.relationship_advice
+        relationship = relationship if relationship else "無資料"
         tk.Label(popup, text="關係建議:", font=("Arial", 12, "bold")).pack(anchor="w",
                                                                        padx=20,
                                                                        pady=(10, 0))
-        tk.Label(popup, text=details.get("relationship_advice", "無資料"),
-                 wraplength=400).pack(anchor="w", padx=30, pady=(0, 10))
+        tk.Label(popup, text=relationship, wraplength=400).pack(anchor="w", padx=30, pady=(0, 10))
 
         # 確認按鈕
         tk.Button(popup, text="確定", command=popup.destroy).pack(pady=20)

@@ -1,49 +1,23 @@
-from .input_data import InputType
 from pydantic import BaseModel
-from pydantic import Field
+
+from .input_data import InputData
+
+
+class FieldDetail(BaseModel):
+    count: int
+    keywords: list[str]
+    strengths: str
+    weaknesses: str
+    financial_strategy: str
+    relationship_advice: str
 
 
 class ResultData(BaseModel):
-    input_type: InputType
-    input_value: str
+    input_data: InputData
     raw_analysis: str | None
-    counts: dict
-    adjusted_counts: dict
+    counts: dict[str, int]
+    adjusted_counts: dict[str, int]
     adjusted_log: list[str]
-    recommendations: list
-    field_details: dict
+    recommendations: list[str]
+    field_details: dict[str, FieldDetail]
     errors: list[str]
-
-    # @classmethod
-    # def from_dict(cls, result_dict: dict):
-    #     input_type = InputType(result_dict.get("input_type"))
-    #     input_value = result_dict.get("input_value", "")
-    #     raw_analysis = result_dict.get("raw_analysis")
-    #     counts = result_dict.get("counts", {})
-    #     adjusted_counts = result_dict.get("adjusted_counts", {})
-    #     adjusted_log = result_dict.get("adjusted_log", [])
-    #     recommendations = result_dict.get("recommendations", [])
-    #     field_details = result_dict.get("field_details", {})
-    #     errors = result_dict.get("errors", [])
-    #     return ResultData(input_type=input_type,
-    #                       input_value=input_value,
-    #                       raw_analysis=raw_analysis,
-    #                       counts=counts,
-    #                       adjusted_counts=adjusted_counts,
-    #                       adjusted_log=adjusted_log,
-    #                       recommendations=recommendations,
-    #                       field_details=field_details,
-    #                       errors=errors)
-
-    # def to_dict(self):
-    #     return {
-    #         "input_type": self.input_type.value,
-    #         "input_value": self.input_value,
-    #         "raw_analysis": self.raw_analysis,
-    #         "counts": self.counts,
-    #         "adjusted_counts": self.adjusted_counts,
-    #         "adjusted_log": self.adjusted_log,
-    #         "recommendations": self.recommendations,
-    #         "field_details": self.field_details,
-    #         "errors": self.errors
-    #     }

@@ -1,5 +1,4 @@
 # ui/input_module.py
-
 import os
 import json
 from typing import Callable
@@ -8,10 +7,9 @@ import tkinter as tk
 from tkinter import messagebox
 
 from data.input_data import InputData, InputType
+from ui.settings_module import SettingView
 from controller.analysis_controller import analyze
 from utils.validators import validate_all
-from ui.settings_module import SettingView
-from ui.result_module import ResultView
 
 
 class InputView:

@@ -1,6 +1,6 @@
-from enum import Enum, auto
-from pydantic import BaseModel
-from pydantic import Field
+from enum import Enum
+
+from pydantic import BaseModel, Field
 
 
 class InputType(str, Enum):
@@ -30,7 +30,6 @@ _default_default_conditions = {name: True for name in ["絕命", "五鬼", "六�
 _default_other_conditions = {name: False for name in ["延年", "天醫", "生氣", "伏位"]}
 
 
-# @dataclass
 class InputData(BaseModel):
     input_type: InputType = InputType.NAME
     input_values: dict[str, str] = Field(default_factory=lambda: _default_input_value)

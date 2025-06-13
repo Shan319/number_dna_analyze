@@ -1,10 +1,10 @@
 # ui/main_window.py
 import tkinter as tk
 
+from data.result_data import ResultData
 from ui.input_module import InputView
 from ui.history_module import HistoryView
 from ui.result_module import ResultView
-from data.result_data import ResultData
 
 
 class MainView:

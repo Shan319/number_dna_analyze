@@ -55,7 +55,7 @@ class ResultController:
             self.logger.warning("接收到空的分析結果")
             return
 
-        self.logger.info(f"處理分析結果: {result_data.input_type.value}")
+        self.logger.info(f"處理分析結果: {result_data.input_data.input_type}")
 
         # 保存當前結果
         self.current_result = result_data
