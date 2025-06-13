@@ -1,15 +1,18 @@
 # ui/input_module.py
 import os
-import json
+import logging
 from typing import Callable
 
 import tkinter as tk
 from tkinter import messagebox
 
-from data.input_data import InputData, InputType
-from ui.settings_module import SettingView
-from controller.analysis_controller import analyze
-from utils.validators import validate_all
+from src.data.file_manager import file_manager
+from src.data.input_data import InputData, InputType
+from src.ui.settings_module import SettingView
+from src.controller.analysis_controller import analyze
+from src.utils.validators import validate_all
+
+logger = logging.getLogger("數字DNA分析器.InputView")
 
 
 class InputView:
@@ -41,8 +44,6 @@ class InputView:
         self.phone_var = tk.StringVar()
         self.birth_var = tk.StringVar()
         self.custom_var = tk.StringVar()  # 英數混合
-
-        self.settings_path = os.path.join("data", "history", "saved_settings.json")
 
         # ===== 放置輸入模組 =====
         radio_button_info = [("中文姓名（限中文）", InputType.NAME.value, self.name_var),
@@ -102,11 +103,8 @@ class InputView:
     def load_saved_settings(self):
         """載入上次存的設定，若不存在檔案就取預設值。"""
         try:
-            with open(self.settings_path, "r", encoding="utf-8") as f:
-                settings = json.load(f)
-
             # 載入設定
-            input_data = InputData(**settings)
+            input_data = file_manager.read_settings()
             self.load_input_data(input_data)
 
         except FileNotFoundError:
@@ -156,12 +154,8 @@ class InputView:
             messagebox.showerror("輸入錯誤", "\n".join(errors))
             return  # 停止執行，避免分析錯誤資料
 
-        # 使用結果控制器處理結果 (保存並顯示結果)
-        from controller.result_controller import ResultController
-        result_controller = ResultController()
-
-        # 處理結果 - 這會自動保存分析結果和輸入歷史
-        result_controller.process_result(result_data=result_data, input_data=input_data)
+        # 自動保存到歷史記錄
+        file_path = file_manager.write_history(result_data)
 
         # 通知更新結果畫面
         if self.notify_update_result_view:
@@ -173,6 +167,7 @@ class InputView:
 
         # 提示用戶分析完成
         messagebox.showinfo("分析完成", "分析已完成，結果已保存到歷史記錄!")
+        logger.info("分析已完成，結果已保存到歷史記錄!")
 
     def on_reset_settings_click(self):
         """點擊【重置設定】按鈕"""
@@ -186,8 +181,6 @@ class InputView:
     def on_save_settings(self):
         """點擊【儲存設定】按鈕"""
         input_data = self.dump_input_data()
+        file_manager.write_settings(input_data)
 
-        with open(self.settings_path, "w", encoding="utf-8") as f:
-            json.dump(input_data.model_dump(), f, ensure_ascii=False, indent=2)
-
-        messagebox.showinfo("提示", f"設定已儲存到 {self.settings_path}！")
+        messagebox.showinfo("提示", f"設定已儲存到 {file_manager.get_settings_path()}！")

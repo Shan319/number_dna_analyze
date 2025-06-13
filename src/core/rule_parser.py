@@ -19,6 +19,7 @@ from typing import Dict, List, Any, Tuple, Set, Optional
 # 設定日誌記錄器
 logger = logging.getLogger("數字DNA分析器.RuleParser")
 
+
 class RuleParser:
     """規則解析與處理類"""
 
@@ -216,11 +217,26 @@ class RuleParser:
             else:
                 # 如果規則文件中沒有，使用預設值
                 self.rule_cancellations = {
-                    "天醫_絕命": {"description": "天醫可抵消絕命", "ratio": 1},
-                    "延年_六煞": {"description": "延年可抵消六煞", "ratio": 1},
-                    "生氣伏位_禍害": {"description": "生氣和伏位的組合可抵消禍害", "ratio": 1},
-                    "天醫延年_禍害": {"description": "天醫和延年的組合可抵消禍害", "ratio": 1},
-                    "生氣天醫延年_五鬼": {"description": "生氣、天醫和延年的組合可抵消五鬼", "ratio": 1}
+                    "天醫_絕命": {
+                        "description": "天醫可抵消絕命",
+                        "ratio": 1
+                    },
+                    "延年_六煞": {
+                        "description": "延年可抵消六煞",
+                        "ratio": 1
+                    },
+                    "生氣伏位_禍害": {
+                        "description": "生氣和伏位的組合可抵消禍害",
+                        "ratio": 1
+                    },
+                    "天醫延年_禍害": {
+                        "description": "天醫和延年的組合可抵消禍害",
+                        "ratio": 1
+                    },
+                    "生氣天醫延年_五鬼": {
+                        "description": "生氣、天醫和延年的組合可抵消五鬼",
+                        "ratio": 1
+                    }
                 }
                 self.logger.info("使用預設規則抵消關係")
         except Exception as e:
@@ -279,16 +295,17 @@ class RuleParser:
         Returns:
             List[str]: 磁場名稱列表
         """
+
         # 實現數字轉換規則
         def handle_5_between_9_1(s):
             """處理9-5-1和1-5-9的特殊情況"""
             result = ''
             i = 0
             while i < len(s) - 2:
-                if s[i] == '9' and s[i+1] == '5' and s[i+2] == '1':
+                if s[i] == '9' and s[i + 1] == '5' and s[i + 2] == '1':
                     result += '91' + '91'
                     i += 3
-                elif s[i] == '1' and s[i+1] == '5' and s[i+2] == '9':
+                elif s[i] == '1' and s[i + 1] == '5' and s[i + 2] == '9':
                     result += '19' + '19'
                     i += 3
                 else:
@@ -302,25 +319,26 @@ class RuleParser:
 
         # 處理中間的5
         if len(processed_number) > 2:
-            processed_number = processed_number[0] + processed_number[1:-1].replace('5', '') + processed_number[-1]
+            processed_number = processed_number[0] + processed_number[1:-1].replace(
+                '5', '') + processed_number[-1]
 
         # 處理首尾的5
         if len(processed_number) >= 2:
             if processed_number[0] == '5':
-                processed_number = processed_number[1]*2 + processed_number[1:]
+                processed_number = processed_number[1] * 2 + processed_number[1:]
             if processed_number[-1] == '5':
-                processed_number = processed_number[:-2] + processed_number[-2]*2
+                processed_number = processed_number[:-2] + processed_number[-2] * 2
 
         # 生成數字對
         pairs = []
         for i in range(len(processed_number) - 1):
-            a, b = processed_number[i], processed_number[i+1]
+            a, b = processed_number[i], processed_number[i + 1]
             if (a == '0' and b != '5') or (b == '0' and a != '5'):
-                pair = b*2 if a == '0' else a*2
+                pair = b * 2 if a == '0' else a * 2
             elif (a == '5' and b == '0') or (a == '0' and b == '5'):
                 pair = "00"
             elif a == '5' or b == '5':
-                pair = b*2 if a == '5' else a*2
+                pair = b * 2 if a == '5' else a * 2
             else:
                 pair = a + b
             pairs.append(pair)
@@ -370,13 +388,13 @@ class RuleParser:
         group_pairs = [("生氣", "生氣"), ("生氣", "延年"), ("生氣", "伏位"), ("延年", "生氣")]
         i = 0
         while i < len(fields) - 1:
-            pair = (fields[i], fields[i+1])
+            pair = (fields[i], fields[i + 1])
             if pair in group_pairs and adjusted_counts["禍害"] > 0:
                 adjust_log.append(f"({pair[0]}-1) ({pair[1]}-1) (禍害-1)")
                 adjusted_counts[pair[0]] -= 1
                 adjusted_counts[pair[1]] -= 1
                 adjusted_counts["禍害"] -= 1
-                used_indexes.update([i, i+1])
+                used_indexes.update([i, i + 1])
                 i += 2
             else:
                 i += 1
@@ -384,7 +402,7 @@ class RuleParser:
         # 規則 4：生氣+天醫+延年 -> 抵五鬼
         i = 0
         while i < len(fields) - 2:
-            triplet = fields[i:i+3]
+            triplet = fields[i:i + 3]
             if triplet == ["生氣", "天醫", "延年"] and adjusted_counts["五鬼"] > 0:
                 adjust_log.append("(生氣-1) (天醫-1) (延年-1) (五鬼-1)")
                 for t in triplet:
@@ -452,6 +470,7 @@ class RuleParser:
                 all_pairs.add(pair)
 
         return True
+
 
 # 如果直接執行此模組，運行測試
 if __name__ == "__main__":

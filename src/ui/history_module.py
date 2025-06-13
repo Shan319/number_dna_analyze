@@ -1,22 +1,10 @@
 import os
-import datetime
-import json
 from typing import Callable
 import tkinter as tk
 from tkinter import ttk
 
-from pydantic import BaseModel
-
-from data.result_data import ResultData
-
-HISTORY_PATH = os.path.join("data", "history")
-DATE_FORMAT = "%Y%m%d_%H%M%S"
-
-
-class HistoryData(BaseModel):
-    path: str
-    date: datetime.datetime
-    raw: ResultData
+from src.data.result_data import ResultData, HistoryData
+from src.data.file_manager import file_manager
 
 
 class HistoryView:
@@ -129,36 +117,7 @@ class HistoryView:
 
     def update_display(self) -> None:
         """重新載入歷史資料"""
-        history: list[HistoryData] = []
-
-        # 讀取指定資料夾下的所有檔案
-        files = os.listdir(HISTORY_PATH)
-        files.sort(reverse=True)
-        for file_name in files:
-            full_path = os.path.join(HISTORY_PATH, file_name)
-
-            # 忽略特定檔案名稱及格式
-            if file_name.startswith("saved_settings"):
-                continue
-            if not file_name.endswith(".json"):
-                continue
-            if not os.path.isfile(full_path):
-                continue
-
-            # 分離檔案名稱及副檔名
-            name, ext = os.path.splitext(file_name)
-            try:
-                date = datetime.datetime.strptime(name, DATE_FORMAT)
-                with open(full_path, encoding="utf-8") as file:
-                    raw = json.load(file)
-
-                # 新增資料
-                history_data = HistoryData(path=full_path, date=date, raw=raw)
-                history.append(history_data)
-            except Exception as e:
-                print(e, "This file can't not be read!")
-                pass
-
+        history = file_manager.read_all_histories()
         self.history = history
 
         # 刪除 treeview 中舊有的資料

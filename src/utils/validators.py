@@ -2,7 +2,7 @@
 import re
 from datetime import datetime
 
-from data.input_data import InputData, InputType, FixDigitsPosition
+from src.data.input_data import InputData, InputType, FixDigitsPosition
 
 
 def is_valid_name(s: str):

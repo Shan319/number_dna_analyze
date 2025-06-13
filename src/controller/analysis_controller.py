@@ -12,11 +12,11 @@ from collections import Counter
 from typing import Any
 
 # 從核心模組導入分析功能
-from data.input_data import InputData, InputType, FixDigitsPosition
-from data.result_data import ResultData, FieldDetail
-from core.field_analyzer import analyze_input, analyze_name_strokes, analyze_mixed_input
-from core.number_analyzer import keyword_fields, magnetic_fields, analyze_magnetic_fields
-from core.recommendation_engine import generate_multiple_lucky_numbers
+from src.data.input_data import InputData, InputType, FixDigitsPosition
+from src.data.result_data import ResultData, FieldDetail
+from src.core.field_analyzer import analyze_input, analyze_name_strokes, analyze_mixed_input
+from src.core.number_analyzer import keyword_fields, magnetic_fields, analyze_magnetic_fields
+from src.core.recommendation_engine import generate_multiple_lucky_numbers
 
 logger = logging.getLogger("數字DNA分析器.AnalysisController")
 

@@ -1,5 +1,5 @@
 # ui/display_module.py
-from data.result_data import ResultData
+from src.data.result_data import ResultData
 
 
 # [TODO] 還沒實作

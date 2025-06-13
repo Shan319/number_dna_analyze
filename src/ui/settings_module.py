@@ -2,7 +2,7 @@
 
 import tkinter as tk
 
-from data.input_data import InputData, FixDigitsPosition
+from src.data.input_data import InputData, FixDigitsPosition
 
 
 class SettingView:

@@ -1,6 +1,17 @@
+import base64
+import json
 from enum import Enum
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, field_serializer
+
+
+def encrypt(text: str) -> str:
+    return base64.b64encode(text.encode()).decode()
+
+
+def decrypt(text: str) -> str:
+    return base64.b64decode(text.encode()).decode()
 
 
 class InputType(str, Enum):
@@ -22,8 +33,11 @@ class FixDigitsPosition(str, Enum):
 _default_input_value = {
     name: ""
     for name in [
-        InputType.NAME.value, InputType.ID.value, InputType.PHONE.value, InputType.BIRTH.value,
-        InputType.CUSTOM.value
+        InputType.NAME.value,
+        InputType.ID.value,
+        InputType.PHONE.value,
+        InputType.BIRTH.value,
+        InputType.CUSTOM.value,
     ]
 }
 _default_default_conditions = {name: True for name in ["絕命", "五鬼", "六煞", "禍害"]}
@@ -47,3 +61,16 @@ class InputData(BaseModel):
     @property
     def input_value(self):
         return self.input_values[self.input_type.value]
+
+    @field_serializer("input_values")
+    def encrypt_input_values(self, value: dict[str, str], _info):
+        plain = json.dumps(value)
+        return encrypt(plain)
+
+    @field_validator("input_values", mode="before")
+    @classmethod
+    def decrypt_input_values(cls, value: Any):
+        if not isinstance(value, str):
+            raise ValueError(f"value should be str")
+        plain = decrypt(value)
+        return json.loads(plain)

@@ -24,8 +24,8 @@ def load_stroke_dict_from_file(filename):
 
 
 # 獲取專案目錄路徑
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+base_dir = ""
+print(base_dir)
 # 資源文件的路徑
 characters_path = os.path.join(base_dir, "resources", "characters.txt")
 
@@ -78,7 +78,7 @@ def transform_numbers(number_str):
             if s[i] == '9' and s[i + 1] == '5' and s[i + 2] == '1':
                 result += '91' + '91'
                 i += 3
-            elif s[i] == '1' and s[i+1] == '5' and s[i+2] == '9':
+            elif s[i] == '1' and s[i + 1] == '5' and s[i + 2] == '9':
                 result += '19' + '19'
                 i += 3
             else:
@@ -155,5 +155,3 @@ def analyze_mixed_input(mixed_str):
             continue
     pairs = transform_numbers(result)
     return " ".join(get_name_from_pair(pair) for pair in pairs)
-
-

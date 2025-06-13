@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 
 from .input_data import InputData
@@ -21,3 +23,9 @@ class ResultData(BaseModel):
     recommendations: list[str]
     field_details: dict[str, FieldDetail]
     errors: list[str]
+
+
+class HistoryData(BaseModel):
+    path: str
+    date: datetime
+    raw: ResultData

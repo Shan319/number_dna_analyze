@@ -15,11 +15,11 @@ import logging
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 
-from data.result_data import ResultData, FieldDetail
-from ui.display_module import show_field_visualization
-from controller.analysis_controller import generate_lucky_numbers
-from core.field_analyzer import analyze_input
-from core.number_analyzer import keyword_fields
+from src.data.result_data import ResultData, FieldDetail
+from src.ui.display_module import show_field_visualization
+from src.controller.analysis_controller import generate_lucky_numbers
+from src.core.field_analyzer import analyze_input
+from src.core.number_analyzer import keyword_fields
 
 # 設定日誌記錄器
 logger = logging.getLogger("數字DNA分析器.ResultModule")
