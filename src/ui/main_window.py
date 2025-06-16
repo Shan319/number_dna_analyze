@@ -1,24 +1,30 @@
 # ui/main_window.py
 import tkinter as tk
 
+from src.utils import main_service
 from src.data.result_data import ResultData
-from src.ui.input_module import InputView
-from src.ui.history_module import HistoryView
-from src.ui.result_module import ResultView
+from src.ui.input_view import InputView
+from src.ui.history_view import HistoryView
+from src.ui.result_view import ResultView
 
 
 class MainView:
-    """主畫面
-    """
+    """主畫面模組。"""
 
     def __init__(self) -> None:
+        self.logger = main_service.log.get_logger("數字 DNA 分析器.MainView")
+        self.logger.info("創建主框架")
+
         self.root = tk.Tk()
-        self.root.title("數字DNA分析器")
+        self.root.title("數字 DNA 分析器")
         self.root.geometry("1000x700")
         self.root.config(bg="#fefae0")
 
         # ===== 標題區 =====
-        title_label = tk.Label(self.root, text="數字DNA分析器", font=("Arial", 24, "bold"), bg="#fefae0")
+        title_label = tk.Label(self.root,
+                               text="數字 DNA 分析器",
+                               font=("Arial", 24, "bold"),
+                               bg="#fefae0")
         title_label.pack(pady=10)
 
         # ===== 內容主框架 =====

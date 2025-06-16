@@ -1,8 +1,10 @@
 from datetime import datetime
+from typing import Self
 
 from pydantic import BaseModel
 
 from .input_data import InputData
+from src.utils import main_service
 
 
 class FieldDetail(BaseModel):
@@ -24,8 +26,27 @@ class ResultData(BaseModel):
     field_details: dict[str, FieldDetail]
     errors: list[str]
 
+    def write_history(self, date: datetime | None = None):
+        if date is None:
+            date = datetime.now()
+        full_path = main_service.file_manager.get_history_path(date)
+        raw = self.model_dump()
+        main_service.file_manager.write_to_json(full_path, raw)
+
 
 class HistoryData(BaseModel):
     path: str
     date: datetime
     raw: ResultData
+
+    @classmethod
+    def read_all_histories(cls) -> list[Self]:
+        histories: list[Self] = []
+
+        history_paths = main_service.file_manager.list_all_history_paths()
+        for full_path, date in history_paths:
+            raw = main_service.file_manager.read_from_json(full_path)
+            history_data = cls(path=full_path, date=date, raw=raw)
+            histories.append(history_data)
+
+        return histories

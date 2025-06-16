@@ -1,38 +1,37 @@
 # ui/result_module.py
-"""
-數字DNA分析器 - 結果顯示模組
-負責展示分析結果並提供結果互動功能
 
-功能:
-1. 顯示磁場分析的基本統計結果
-2. 展示進階規則應用後的調整結果
-3. 顯示推薦的幸運數字
-4. 提供保存/載入分析結果的界面
-5. 支援不同顯示模式的切換
-"""
 from collections import Counter
-import logging
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 
+from src.utils import main_service
 from src.data.result_data import ResultData, FieldDetail
 from src.ui.display_module import show_field_visualization
-from src.controller.analysis_controller import generate_lucky_numbers
+from src.controller.analysis_controller import generate_full_lucky_numbers
 from src.core.field_analyzer import analyze_input
 from src.core.number_analyzer import keyword_fields
 
-# 設定日誌記錄器
-logger = logging.getLogger("數字DNA分析器.ResultModule")
-
 
 class ResultView:
+    """結果顯示模組。
+
+    負責展示分析結果並提供結果互動功能
+
+    功能:
+    1. 顯示磁場分析的基本統計結果
+    2. 展示進階規則應用後的調整結果
+    3. 顯示推薦的幸運數字
+    4. 提供保存/載入分析結果的界面
+    5. 支援不同顯示模式的切換
+    """
 
     def __init__(self, parent: tk.Widget) -> None:
-        logger.info("創建結果顯示框架")
+        # 設定日誌記錄器
+        self.logger = main_service.log.get_logger("數字 DNA 分析器.ResultModule")
+        self.logger.info("創建結果顯示框架")
 
         self.parent = parent
         self.frame = tk.LabelFrame(parent, text="分析結果", font=("Arial", 14))
-        self.input_data: ResultData | None = None
         self.result_data: ResultData | None = None
 
         self.notbook: ttk.Notebook | None = None
@@ -48,7 +47,7 @@ class ResultView:
     def update_display(self):
         """更新畫面
 
-        注意先賦值 self.input_data/self.result_data 再呼叫 update_display。
+        注意先賦值 self.result_data 再呼叫 update_display。
         """
 
         # 清空現有內容
@@ -66,7 +65,7 @@ class ResultView:
         else:
             result_data = self.result_data
             input_type = result_data.input_data.input_type
-            logger.info(f"更新結果顯示: {input_type.value}")
+            self.logger.info(f"更新結果顯示: {input_type.value}")
 
             # 分析類型標頭
             header = tk.Label(self.frame,
@@ -323,15 +322,9 @@ class ResultView:
         # 獲取當前的磁場計數
         adjusted_counts = self.result_data.adjusted_counts
 
-        # 更新用_獲取當前的數字長度_從現有推薦數字推斷
-        existing_recommendations = self.result_data.recommendations
-        if existing_recommendations:
-            digit_length = len(str(existing_recommendations[0]))
-        else:
-            digit_length = 4
-
         # 生成新的幸運數字
-        new_numbers = generate_lucky_numbers(adjusted_counts, digit_length, count)
+        new_numbers = generate_full_lucky_numbers(adjusted_counts, self.result_data.input_data,
+                                                  count)
         if new_numbers:
             # 更新結果數據
             self.result_data.recommendations = new_numbers

@@ -1,17 +1,10 @@
-import base64
 import json
 from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, field_serializer
 
-
-def encrypt(text: str) -> str:
-    return base64.b64encode(text.encode()).decode()
-
-
-def decrypt(text: str) -> str:
-    return base64.b64decode(text.encode()).decode()
+from src.utils import main_service
 
 
 class InputType(str, Enum):
@@ -65,12 +58,24 @@ class InputData(BaseModel):
     @field_serializer("input_values")
     def encrypt_input_values(self, value: dict[str, str], _info):
         plain = json.dumps(value)
-        return encrypt(plain)
+        return main_service.cryptography.encrypt(plain)
 
     @field_validator("input_values", mode="before")
     @classmethod
     def decrypt_input_values(cls, value: Any):
         if not isinstance(value, str):
             raise ValueError(f"value should be str")
-        plain = decrypt(value)
+        plain = main_service.cryptography.decrypt(value)
         return json.loads(plain)
+
+    def write_settings(self):
+        full_path = main_service.file_manager.get_settings_path()
+        raw = self.model_dump()
+        main_service.file_manager.write_to_json(full_path, raw)
+
+    @classmethod
+    def read_settings(cls):
+        full_path = main_service.file_manager.get_settings_path()
+        raw = main_service.file_manager.read_from_json(full_path)
+        input_data = InputData(**raw)
+        return input_data

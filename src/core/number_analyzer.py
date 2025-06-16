@@ -14,58 +14,79 @@ keyword_fields = {
     "六煞": {"情感、婚姻、或人際關係方面糾葛"},
 }
 magnetic_fields = {
-    "伏位": {"strengths": "有耐心、責任心強、幽默風趣、善於溝通協調",
-             "weaknesses": "矛盾交錯、沒有安全感、主觀意識強、作風保守",
-             "financial_strategy": "耐心積累，穩健投資，適合選擇風險較低、回報穩定的金融產品",
-             "relationship_advice": "尋求穩定與安全感，在互動中需要耐心溝通"},
-    "生氣": {"strengths": "樂天派、凡事不強求、熱心助人、擁有好人緣",
-             "weaknesses": "企圖心不旺盛，由於對任何事不強求隨遇而安",
-             "financial_strategy": "積極開拓，慎選機遇，避免盲目跟風",
-             "relationship_advice": "積極互動，珍惜緣分，避免過度追求新鮮感"},
-    "天醫": {"strengths": "賺錢有如神助、諸事順遂、外型氣質俱佳",
-             "weaknesses": "極度善良，偶爾會被蒙騙",
-             "financial_strategy": "智慧投資，行善積福，防範詐騙",
-             "relationship_advice": "關懷對方，共同成長，給予情感支持"},
-    "延年": {"strengths": "決斷力強、內斂成熟",
-             "weaknesses": "缺少彈性變通，做事強勢，一板一眼",
-             "financial_strategy": "領導風範，規劃未來，長期財務規劃",
-             "relationship_advice": "領導與支持，平衡關係，聆聽對方意見"},
-    "絕命": {"strengths": "反應靈敏、善於謀略，重視精神層面",
-             "weaknesses": "缺乏圓融、執著己見",
-             "financial_strategy": "冷靜應對，規避風險，避免情緒化決策",
-             "relationship_advice": "情緒管理，避免極端，冷靜處理糾紛"},
-    "禍害": {"strengths": "辯才無礙、能言善道",
-             "weaknesses": "口舌之爭不斷、身體狀況不佳",
-             "financial_strategy": "口才服人，謹慎決策，避免過度自信",
-             "relationship_advice": "慎選言辭，避免衝突，注意言辭影響"},
-    "五鬼": {"strengths": "鬼才洋溢、快速的學習力",
-             "weaknesses": "變動太快，難以產生安定力量",
-             "financial_strategy": "創新思維，謹慎投資，避免忽視風險",
-             "relationship_advice": "創新互動，忠誠為本，保持透明度"},
-    "六煞": {"strengths": "異性緣特別好、具有俊男美女的外貌",
-             "weaknesses": "總是為情所困，感情、事業、工作不順遂",
-             "financial_strategy": "和諧人際，謹慎合作，明確權責界限",
-             "relationship_advice": "和諧相處，避免糾纏，設定清晰界限"}
+    "伏位": {
+        "strengths": "有耐心、責任心強、幽默風趣、善於溝通協調",
+        "weaknesses": "矛盾交錯、沒有安全感、主觀意識強、作風保守",
+        "financial_strategy": "耐心積累，穩健投資，適合選擇風險較低、回報穩定的金融產品",
+        "relationship_advice": "尋求穩定與安全感，在互動中需要耐心溝通"
+    },
+    "生氣": {
+        "strengths": "樂天派、凡事不強求、熱心助人、擁有好人緣",
+        "weaknesses": "企圖心不旺盛，由於對任何事不強求隨遇而安",
+        "financial_strategy": "積極開拓，慎選機遇，避免盲目跟風",
+        "relationship_advice": "積極互動，珍惜緣分，避免過度追求新鮮感"
+    },
+    "天醫": {
+        "strengths": "賺錢有如神助、諸事順遂、外型氣質俱佳",
+        "weaknesses": "極度善良，偶爾會被蒙騙",
+        "financial_strategy": "智慧投資，行善積福，防範詐騙",
+        "relationship_advice": "關懷對方，共同成長，給予情感支持"
+    },
+    "延年": {
+        "strengths": "決斷力強、內斂成熟",
+        "weaknesses": "缺少彈性變通，做事強勢，一板一眼",
+        "financial_strategy": "領導風範，規劃未來，長期財務規劃",
+        "relationship_advice": "領導與支持，平衡關係，聆聽對方意見"
+    },
+    "絕命": {
+        "strengths": "反應靈敏、善於謀略，重視精神層面",
+        "weaknesses": "缺乏圓融、執著己見",
+        "financial_strategy": "冷靜應對，規避風險，避免情緒化決策",
+        "relationship_advice": "情緒管理，避免極端，冷靜處理糾紛"
+    },
+    "禍害": {
+        "strengths": "辯才無礙、能言善道",
+        "weaknesses": "口舌之爭不斷、身體狀況不佳",
+        "financial_strategy": "口才服人，謹慎決策，避免過度自信",
+        "relationship_advice": "慎選言辭，避免衝突，注意言辭影響"
+    },
+    "五鬼": {
+        "strengths": "鬼才洋溢、快速的學習力",
+        "weaknesses": "變動太快，難以產生安定力量",
+        "financial_strategy": "創新思維，謹慎投資，避免忽視風險",
+        "relationship_advice": "創新互動，忠誠為本，保持透明度"
+    },
+    "六煞": {
+        "strengths": "異性緣特別好、具有俊男美女的外貌",
+        "weaknesses": "總是為情所困，感情、事業、工作不順遂",
+        "financial_strategy": "和諧人際，謹慎合作，明確權責界限",
+        "relationship_advice": "和諧相處，避免糾纏，設定清晰界限"
+    }
 }
 
-def analyze_magnetic_fields(input_list):
-    """
-    分析磁場並返回結果
 
-    Args:
-        input_list (list): 磁場名稱列表
+def analyze_magnetic_fields(input_list: list[str]):
+    """分析磁場並返回結果
 
-    Returns:
-        tuple: (base_counts, adjusted_counts, adjust_log)
-        - base_counts: 原始磁場計數
-        - adjusted_counts: 調整後的磁場計數
-        - adjust_log: 調整日誌
+    Parameters
+    ----------
+    input_list : list[str]
+        磁場名稱列表
+
+    Returns
+    -------
+    base_counts : dict[str, int]
+        原始磁場計數
+    adjusted_counts : dict[str, int]
+        整後的磁場計數
+    adjust_log : list[str]
+        調整日誌
     """
     # 初步計數
     base_counts = Counter(input_list)
 
     # 進階規則處理
-    adjusted_counts = base_counts.copy()
+    adjusted_counts = dict(base_counts.copy())
     adjust_log = []
 
     # 使用 try-except 以防磁場名稱不在預定義列表中
@@ -91,13 +112,13 @@ def analyze_magnetic_fields(input_list):
         i = 0
         used_indexes = set()
         while i < len(input_list) - 1:
-            pair = (input_list[i], input_list[i+1])
+            pair = (input_list[i], input_list[i + 1])
             if pair in group_pairs and adjusted_counts.get("禍害", 0) > 0:
                 adjust_log.append(f"({pair[0]}-1) ({pair[1]}-1) (禍害-1)")
                 adjusted_counts[pair[0]] -= 1
                 adjusted_counts[pair[1]] -= 1
                 adjusted_counts["禍害"] -= 1
-                used_indexes.update([i, i+1])
+                used_indexes.update([i, i + 1])
                 i += 2
             else:
                 i += 1
@@ -105,7 +126,7 @@ def analyze_magnetic_fields(input_list):
         # 規則 4：生氣+天醫+延年 -> 抵五鬼
         i = 0
         while i < len(input_list) - 2:
-            triplet = input_list[i:i+3]
+            triplet = input_list[i:i + 3]
             if triplet == ["生氣", "天醫", "延年"] and adjusted_counts.get("五鬼", 0) > 0:
                 adjust_log.append("(生氣-1) (天醫-1) (延年-1) (五鬼-1)")
                 for t in triplet:
@@ -145,4 +166,3 @@ def analyze_magnetic_fields(input_list):
     adjusted_counts = {k: v for k, v in adjusted_counts.items() if v > 0}
 
     return base_counts, adjusted_counts, adjust_log
-

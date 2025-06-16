@@ -1,6 +1,6 @@
 #  core/rule_parser.py
 """
-數字DNA分析器 - 規則解析器
+[Deprecate] 數字 DNA 分析器 - 規則解析器
 負責解析和處理規則檔案，為分析引擎提供結構化規則數據。
 
 功能：
@@ -16,26 +16,26 @@ import os
 from pathlib import Path
 from typing import Dict, List, Any, Tuple, Set, Optional
 
+from src.utils import main_service
 # 設定日誌記錄器
-logger = logging.getLogger("數字DNA分析器.RuleParser")
 
 
 class RuleParser:
     """規則解析與處理類"""
 
-    def __init__(self, rules_directory: str = None):
+    def __init__(self, rules_directory: str | None = None):
         """
         初始化規則解析器
 
         Args:
             rules_directory (str): 規則檔案目錄，如果未提供則使用預設路徑
         """
-        self.logger = logging.getLogger("數字DNA分析器.RuleParser")
+        self.logger = main_service.log.get_logger("數字 DNA 分析器.RuleParser")
 
         # 設定規則目錄
         if rules_directory is None:
             base_dir = Path(__file__).parent.parent
-            self.rules_directory = os.path.join(base_dir, "resources", "rules")
+            self.rules_directory: str = os.path.join(base_dir, "resources", "rules")
         else:
             self.rules_directory = rules_directory
 

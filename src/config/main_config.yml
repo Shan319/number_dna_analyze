@@ -1,0 +1,8 @@
+project_name: "數字 DNA 分析器"
+service_name: "數字 DNA 分析器"
+description: "以易經......"
+system_integrator: "台大 103(下)什麼課作業"
+note: ""
+
+log_path: "log"
+log_level: "debug"

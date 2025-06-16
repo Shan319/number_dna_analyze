@@ -1,21 +1,20 @@
 # ui/input_module.py
-import os
-import logging
+
 from typing import Callable
 
 import tkinter as tk
 from tkinter import messagebox
 
-from src.data.file_manager import file_manager
+from src.utils import main_service
+from src.utils.validators import validate_all
 from src.data.input_data import InputData, InputType
+from src.data.result_data import ResultData
 from src.ui.settings_module import SettingView
 from src.controller.analysis_controller import analyze
-from src.utils.validators import validate_all
-
-logger = logging.getLogger("數字DNA分析器.InputView")
 
 
 class InputView:
+    """輸入畫面模組。"""
 
     def __init__(self, parent: tk.Widget) -> None:
         """輸入畫面模組。
@@ -29,6 +28,7 @@ class InputView:
         history_update_cb : Callable
             歷史畫面的更新 callback
         """
+        self.logger = main_service.log.get_logger("數字 DNA 分析器.InputView")
 
         self.notify_update_history_view: Callable | None = None
         self.notify_update_result_view: Callable | None = None
@@ -104,7 +104,7 @@ class InputView:
         """載入上次存的設定，若不存在檔案就取預設值。"""
         try:
             # 載入設定
-            input_data = file_manager.read_settings()
+            input_data = InputData.read_settings()
             self.load_input_data(input_data)
 
         except FileNotFoundError:
@@ -155,7 +155,7 @@ class InputView:
             return  # 停止執行，避免分析錯誤資料
 
         # 自動保存到歷史記錄
-        file_path = file_manager.write_history(result_data)
+        file_path = ResultData.write_history(result_data)
 
         # 通知更新結果畫面
         if self.notify_update_result_view:
@@ -167,7 +167,7 @@ class InputView:
 
         # 提示用戶分析完成
         messagebox.showinfo("分析完成", "分析已完成，結果已保存到歷史記錄!")
-        logger.info("分析已完成，結果已保存到歷史記錄!")
+        self.logger.info("分析已完成，結果已保存到歷史記錄!")
 
     def on_reset_settings_click(self):
         """點擊【重置設定】按鈕"""
@@ -181,6 +181,6 @@ class InputView:
     def on_save_settings(self):
         """點擊【儲存設定】按鈕"""
         input_data = self.dump_input_data()
-        file_manager.write_settings(input_data)
+        input_data.write_settings()
 
-        messagebox.showinfo("提示", f"設定已儲存到 {file_manager.get_settings_path()}！")
+        messagebox.showinfo("提示", f"設定已儲存到 {main_service.file_manager.get_settings_path()}！")

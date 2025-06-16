@@ -3,20 +3,22 @@ from typing import Callable
 import tkinter as tk
 from tkinter import ttk
 
+from src.utils import main_service
 from src.data.result_data import ResultData, HistoryData
-from src.data.file_manager import file_manager
 
 
 class HistoryView:
+    """顯示歷史紀錄清單 (Treeview)。可以從清單內點選，即可在結果畫面顯示當時的分析結果。"""
 
     def __init__(self, parent: tk.Widget) -> None:
-        """顯示歷史紀錄清單 (Treeview)。可以從清單內點選，即可在結果畫面顯示當時的分析結果。
+        """顯示歷史紀錄清單。
 
         Parameters
         ----------
         parent : tk.Widget
             此 Treeview 要放在哪個 Frame 內
         """
+        self.logger = main_service.log.get_logger("數字 DNA 分析器.HistoryView")
 
         self.notify_update_result_view: Callable[[ResultData | None], None] | None = None
 
@@ -117,7 +119,7 @@ class HistoryView:
 
     def update_display(self) -> None:
         """重新載入歷史資料"""
-        history = file_manager.read_all_histories()
+        history = HistoryData.read_all_histories()
         self.history = history
 
         # 刪除 treeview 中舊有的資料

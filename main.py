@@ -1,30 +1,40 @@
 # main.py
 """
-數字DNA分析器 - 主程式入口點
+數字 DNA 分析器 - 主程式入口點
 提供數字能量分析與幸運數字推薦功能
 """
 
 import sys
-import logging
 from tkinter import messagebox
 
-from src.data.file_manager import file_manager
+from src.config.main_config import get_main_config
+
+from src.utils.file_manager import FileManager
+from src.utils.cryptography import AESEncryptionFernet
+from src.utils.log_provider.log_provider_interface import Level
+from src.utils.log_provider.log_provider_impl import LogProvideImpl
+from src.utils import main_service
 from src.ui.main_window import MainView
 
 
 # 主程式進入點
 def main():
-    file_manager.ensure_required_dirs()
-    log_path = file_manager.get_log_path()
+    main_config = get_main_config()
+    log_level = Level[main_config.log_level]
 
-    # 日誌設定
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s (%(name)s)[%(levelname)s] %(message)s',
-        handlers=[logging.FileHandler(log_path, encoding="utf-8"),
-                  logging.StreamHandler()])
+    # Prepare Providers - File Manager
+    file_manager = FileManager()
+    main_service.file_manager = file_manager
 
-    logger = logging.getLogger("數字DNA分析器")
+    # Prepare Providers - Log
+    main_service.log = LogProvideImpl(file_manager.get_log_path())
+    main_service.log.set_level(log_level.value)
+    logger = main_service.log.get_logger("數字 DNA 分析器")
+    logger.info("啟動數字 DNA 分析器")
+
+    # Prepare Providers - Cryptography
+    cryptography = AESEncryptionFernet(file_manager)
+    main_service.cryptography = cryptography
 
     # 未捕捉例外處理
     def handle_exception(exc_type, exc_value, exc_traceback):
@@ -33,7 +43,6 @@ def main():
 
     sys.excepthook = handle_exception
 
-    logger.info("啟動數字DNA分析器")
     required_files = file_manager.check_required_files()
     for path, exist in required_files.items():
         if exist:

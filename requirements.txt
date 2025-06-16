@@ -1,3 +1,14 @@
 
-cryptography==40.0.2
+# yaml
+pyyaml==6.0.2
+types-PyYAML==6.0.12.2
+
+# console
+colorama==0.4.6
+types-colorama==0.4.15.12
+
+# pydantic
 pydantic
+
+# cryptography
+cryptography==40.0.2
