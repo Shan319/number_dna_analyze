@@ -8,9 +8,9 @@
 """
 
 from collections import Counter
+from typing import Any
 
 # 從核心模組導入分析功能
-from logging import Logger
 from src.utils import main_service
 from src.data.input_data import InputData, InputType, FixDigitsPosition
 from src.data.result_data import ResultData, FieldDetail
@@ -185,26 +185,20 @@ def apply_advanced_rules(input_list):
     return adjusted_counts, adjust_log
 
 
-def generate_field_details(adjusted_counts):
+def generate_field_details(adjusted_counts: dict[str, int]) -> dict[str, Any]:
     """生成各個磁場的詳細資訊
 
     Parameters
     ----------
-    adjusted_counts : _type_
+    adjusted_counts : dict[str, int]
         調整後的磁場計數
 
     Returns
     -------
-    _type_
-        _description_
-    """ """
-    生成各個磁場的詳細資訊
-    Args:
-        adjusted_counts (dict): 調整後的磁場計數
-    Returns:
-        dict: 包含磁場詳細資訊的字典
+    dict[str, Any]
+        包含磁場詳細資訊的字典
     """
-    field_details = {}
+    field_details: dict[str, Any] = {}
 
     for field, count in adjusted_counts.items():
         if count <= 0:
@@ -222,15 +216,22 @@ def generate_field_details(adjusted_counts):
     return field_details
 
 
-def generate_lucky_numbers(adjusted_counts: dict[str, str], length=4, count=5):
-    """
-    根據分析結果生成幸運數字
-    Args:
-        adjusted_counts (dict): 調整後的磁場計數
-        length (int): 生成數字長度
-        count (int): 生成數量
-    Returns:
-        list: 幸運數字列表
+def generate_lucky_numbers(adjusted_counts: dict[str, int], length=4, count=5) -> list[str]:
+    """根據分析結果生成幸運數字
+
+    Parameters
+    ----------
+    adjusted_counts : dict[str, int]
+        調整後的磁場計數
+    length : int, optional
+        生成數字長度, by default 4
+    count : int, optional
+        生成數量, by default 5
+
+    Returns
+    -------
+    list[str]
+        幸運數字列表
     """
     logger = get_logger()
 
@@ -246,7 +247,9 @@ def generate_lucky_numbers(adjusted_counts: dict[str, str], length=4, count=5):
         return []
 
 
-def generate_full_lucky_numbers(adjusted_counts, input_data: InputData, count: int = 5):
+def generate_full_lucky_numbers(adjusted_counts: dict[str, int],
+                                input_data: InputData,
+                                count: int = 5) -> list[str]:
     digits_length = int(input_data.digits_length)
     fixed_digits_position = input_data.fixed_digits_position
     fixed_digits_value = input_data.fixed_digits_value
@@ -258,7 +261,7 @@ def generate_full_lucky_numbers(adjusted_counts, input_data: InputData, count: i
 
     # 插入固定英數字
     if fixed_digits_position != FixDigitsPosition.NONE:
-        new_recommendations = []
+        new_recommendations: list[str] = []
         for recommendation in recommendations:
             prev = ""
             post = ""

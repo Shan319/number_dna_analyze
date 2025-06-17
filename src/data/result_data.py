@@ -31,7 +31,7 @@ class ResultData(BaseModel):
             date = datetime.now()
         full_path = main_service.file_manager.get_history_path(date)
         raw = self.model_dump()
-        main_service.file_manager.write_to_json(full_path, raw)
+        main_service.file_manager.dump_to_json_file(full_path, raw)
 
 
 class HistoryData(BaseModel):
@@ -45,7 +45,7 @@ class HistoryData(BaseModel):
 
         history_paths = main_service.file_manager.list_all_history_paths()
         for full_path, date in history_paths:
-            raw = main_service.file_manager.read_from_json(full_path)
+            raw = main_service.file_manager.load_from_json_file(full_path)
             history_data = cls(path=full_path, date=date, raw=raw)
             histories.append(history_data)
 

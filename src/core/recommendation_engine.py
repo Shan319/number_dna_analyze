@@ -11,7 +11,7 @@ magneticic_pairs = {
 
 
 # 用於磁場抵銷的原始函式
-def generate_lucky_numbers(magnetic_fields):
+def generate_lucky_numbers(magnetic_fields: dict[str, int]) -> dict[str, int]:
     fields = magnetic_fields.copy()
     neg_fields = dict()
     cancel_fields = {"天醫": 0, "生氣": 0, "伏位": 0, "延年": 0, "天醫+生氣+延年": 0}
@@ -42,9 +42,9 @@ def generate_lucky_numbers(magnetic_fields):
     return cancel_fields
 
 
-def generate_lucky_number_chain_by_cancel_fields(cancel_fields, length):
+def generate_lucky_number_chain_by_cancel_fields(cancel_fields: dict[str, int], length: int) -> str:
     num_fields = length - 1
-    magnetic_sequence = []
+    magnetic_sequence: list[str] = []
 
     # 將所有磁場對應的字典展平為 (field, pair) 的組合
     all_pairs_by_field = []
@@ -91,7 +91,7 @@ def generate_lucky_number_chain_by_cancel_fields(cancel_fields, length):
         last_digit = magnetic_sequence[-1][1]
 
         # 找所有合法接得上的磁場對，且 cancel_fields 還有剩
-        candidates = []
+        candidates: list[tuple[str, str]] = []
         for field, count in remaining_fields.items():
             if count <= 0:
                 continue
@@ -138,9 +138,11 @@ def generate_lucky_number_chain_by_cancel_fields(cancel_fields, length):
 
 
 # 產生多組幸運數字（連續磁場模式）
-def generate_multiple_lucky_numbers(magnetic_input, length, count=15):
+def generate_multiple_lucky_numbers(magnetic_input: dict[str, int],
+                                    length: int,
+                                    count=15) -> list[str]:
     cancel = generate_lucky_numbers(magnetic_input)
-    results = []
+    results: list[str] = []
     for _ in range(count):
         lucky = generate_lucky_number_chain_by_cancel_fields(cancel, length)
         results.append(lucky)

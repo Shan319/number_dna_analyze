@@ -1,14 +1,13 @@
 #  core/field_analyzer.py
 
-from cryptography.fernet import Fernet
-import os
-import re
+from src.utils import main_service
 
 
 # 讀取筆劃檔
-def load_stroke_dict_from_file(filename):
+def load_stroke_dict_from_file() -> dict[str, int]:
     stroke_dict = {}
-    with open(filename, "r", encoding="cp950", errors="ignore") as f:
+    characters_path = main_service.file_manager.get_characters_path()
+    with open(characters_path, "r", encoding="cp950", errors="ignore") as f:
         for line in f:
             if not line.strip() or line.startswith("Column"):
                 continue
@@ -23,15 +22,6 @@ def load_stroke_dict_from_file(filename):
     return stroke_dict
 
 
-# 獲取專案目錄路徑
-base_dir = ""
-print(base_dir)
-# 資源文件的路徑
-characters_path = os.path.join(base_dir, "resources", "characters.txt")
-
-# 載入筆劃字典
-stroke_dict = load_stroke_dict_from_file(characters_path)
-
 # 磁場對應表
 name_map = {
     "伏位": {"00", "11", "22", "33", "44", "66", "77", "88", "99"},
@@ -45,33 +35,10 @@ name_map = {
 }
 
 
-# 加密保護
-def load_key():
-    if not os.path.exists("key.key"):
-        key = Fernet.generate_key()
-        with open("key.key", "wb") as f:
-            f.write(key)
-    else:
-        with open("key.key", "rb") as f:
-            key = f.read()
-    return Fernet(key)
-
-
-fernet = load_key()
-
-
-def encrypt(text):
-    return fernet.encrypt(text.encode()).decode()
-
-
-def decrypt(token):
-    return fernet.decrypt(token.encode()).decode()
-
-
 # 數字轉配對組合規則
-def transform_numbers(number_str):
+def transform_numbers(number_str: str) -> list[str]:
 
-    def handle_5_between_9_1(s):
+    def handle_5_between_9_1(s: str):
         result = ''
         i = 0
         while i < len(s) - 2:
@@ -95,7 +62,7 @@ def transform_numbers(number_str):
             number_str = number_str[1] * 2 + number_str[1:]
         if number_str[-1] == '5':
             number_str = number_str[:-2] + number_str[-2] * 2
-    pairs = []
+    pairs: list[str] = []
     for i in range(len(number_str) - 1):
         a, b = number_str[i], number_str[i + 1]
         if (a == '0' and b != '5') or (b == '0' and a != '5'):
@@ -110,14 +77,14 @@ def transform_numbers(number_str):
     return pairs
 
 
-def get_name_from_pair(pair):
+def get_name_from_pair(pair: str) -> str:
     for name, group in name_map.items():
         if pair in group:
             return name
     return "未知"
 
 
-def analyze_input(input_str, is_id=False):
+def analyze_input(input_str: str, is_id=False) -> str:
     if is_id:
         letter = input_str[0]
         number = input_str[1:]
@@ -130,21 +97,24 @@ def analyze_input(input_str, is_id=False):
     return " ".join(names)
 
 
-def analyze_name_strokes(name_str):
-    strokes = []
+def analyze_name_strokes(name_str: str) -> str | None:
+    strokes: list[str] = []
+
+    # 載入筆劃字典
+    stroke_dict = load_stroke_dict_from_file()
     for char in name_str:
         if char in stroke_dict:
             strokes.append(str(stroke_dict[char]))
         else:
             print(f"無法辨識字元「{char}」，請擴充 stroke_dict。")
-            return
+            return None
     stroke_string = ''.join(strokes)
     pairs = transform_numbers(stroke_string)
     results = [get_name_from_pair(pair) for pair in pairs]
     return " ".join(results)
 
 
-def analyze_mixed_input(mixed_str):
+def analyze_mixed_input(mixed_str: str) -> str:
     result = ""
     for ch in mixed_str.upper():
         if ch.isalpha():

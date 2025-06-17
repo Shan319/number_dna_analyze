@@ -71,11 +71,11 @@ class InputData(BaseModel):
     def write_settings(self):
         full_path = main_service.file_manager.get_settings_path()
         raw = self.model_dump()
-        main_service.file_manager.write_to_json(full_path, raw)
+        main_service.file_manager.dump_to_json_file(full_path, raw)
 
     @classmethod
     def read_settings(cls):
         full_path = main_service.file_manager.get_settings_path()
-        raw = main_service.file_manager.read_from_json(full_path)
+        raw = main_service.file_manager.load_from_json_file(full_path)
         input_data = InputData(**raw)
         return input_data

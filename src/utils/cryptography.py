@@ -25,9 +25,9 @@ class AESEncryptionFernet:
         """產生密鑰"""
         key_path = file_manager.get_key_path()
         if os.path.exists(key_path):
-            key = file_manager.read_from_data(key_path)
+            key = file_manager.load_from_data_file(key_path)
         else:
             key = Fernet.generate_key()
-            file_manager.write_to_data(key_path, key)
+            file_manager.dump_to_data_file(key_path, key)
 
         return key

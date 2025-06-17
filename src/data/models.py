@@ -17,14 +17,12 @@ from typing import Dict, List, Any, Optional, Union, Tuple, Set
 from dataclasses import dataclass, field, asdict
 
 # 定義常數
-MAGNETIC_FIELD_TYPES = {
-    "伏位", "延年", "生氣", "天醫", "六煞", "絕命", "禍害", "五鬼"
-}
+MAGNETIC_FIELD_TYPES = {"伏位", "延年", "生氣", "天醫", "六煞", "絕命", "禍害", "五鬼"}
 
 FIELD_ATTRIBUTES = [
-    "keywords", "strengths", "weaknesses",
-    "financial_strategy", "relationship_advice"
+    "keywords", "strengths", "weaknesses", "financial_strategy", "relationship_advice"
 ]
+
 
 @dataclass
 class MagneticField:
@@ -63,6 +61,7 @@ class MagneticField:
             data["keywords"] = [k.strip() for k in data["keywords"].split("、")]
 
         return cls(**data)
+
 
 @dataclass
 class InputData:
@@ -106,6 +105,7 @@ class InputData:
 
         return len(errors) == 0, errors
 
+
 @dataclass
 class AnalysisResult:
     """分析結果模型，儲存分析引擎產生的結果"""
@@ -140,25 +140,23 @@ class AnalysisResult:
     def from_dict(cls, data: Dict[str, Any]) -> 'AnalysisResult':
         """從字典建立實例"""
         # 創建輸入資料對象
-        input_data = InputData(
-            input_type=data.get("input_type", ""),
-            value=data.get("input_value", ""),
-            options=data.get("input_options", {}),
-            timestamp=data.get("timestamp", datetime.datetime.now().timestamp())
-        )
+        input_data = InputData(input_type=data.get("input_type", ""),
+                               value=data.get("input_value", ""),
+                               options=data.get("input_options", {}),
+                               timestamp=data.get("timestamp",
+                                                  datetime.datetime.now().timestamp()))
 
         # 創建分析結果對象
-        return cls(
-            input_data=input_data,
-            raw_analysis=data.get("raw_analysis", ""),
-            counts=data.get("counts", {}),
-            adjusted_counts=data.get("adjusted_counts", {}),
-            adjust_log=data.get("adjust_log", []),
-            recommendations=data.get("recommendations", []),
-            field_details=data.get("field_details", {}),
-            messages=data.get("messages", []),
-            timestamp=data.get("timestamp", datetime.datetime.now().timestamp())
-        )
+        return cls(input_data=input_data,
+                   raw_analysis=data.get("raw_analysis", ""),
+                   counts=data.get("counts", {}),
+                   adjusted_counts=data.get("adjusted_counts", {}),
+                   adjust_log=data.get("adjust_log", []),
+                   recommendations=data.get("recommendations", []),
+                   field_details=data.get("field_details", {}),
+                   messages=data.get("messages", []),
+                   timestamp=data.get("timestamp",
+                                      datetime.datetime.now().timestamp()))
 
     def summary(self) -> Dict[str, Any]:
         """生成結果摘要"""
@@ -166,10 +164,10 @@ class AnalysisResult:
         total_fields = sum(self.adjusted_counts.values())
 
         # 計算正向和負向磁場數
-        positive_fields = sum(self.adjusted_counts.get(field, 0)
-                             for field in ["天醫", "生氣", "延年", "伏位"])
-        negative_fields = sum(self.adjusted_counts.get(field, 0)
-                             for field in ["五鬼", "六煞", "禍害", "絕命"])
+        positive_fields = sum(
+            self.adjusted_counts.get(field, 0) for field in ["天醫", "生氣", "延年", "伏位"])
+        negative_fields = sum(
+            self.adjusted_counts.get(field, 0) for field in ["五鬼", "六煞", "禍害", "絕命"])
 
         # 計算比例
         positive_ratio = positive_fields / total_fields if total_fields > 0 else 0
@@ -188,11 +186,7 @@ class AnalysisResult:
     def _get_dominant_fields(self, top_n: int = 3) -> List[str]:
         """獲取主要的磁場（出現次數最多的前N個）"""
         # 按出現次數排序
-        sorted_fields = sorted(
-            self.adjusted_counts.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )
+        sorted_fields = sorted(self.adjusted_counts.items(), key=lambda x: x[1], reverse=True)
 
         # 返回前N個
         return [field for field, _ in sorted_fields[:top_n]]
@@ -272,6 +266,7 @@ class AnalysisResult:
 
         return "\n".join(lines)
 
+
 @dataclass
 class MagneticPair:
     """磁場對應數字對模型，定義磁場與數字對的對應關係"""
@@ -291,15 +286,13 @@ class MagneticPair:
 
     def to_dict(self) -> Dict[str, Any]:
         """轉換為字典表示"""
-        return {
-            "field": self.field,
-            "number_pairs": self.number_pairs
-        }
+        return {"field": self.field, "number_pairs": self.number_pairs}
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'MagneticPair':
         """從字典建立實例"""
         return cls(**data)
+
 
 @dataclass
 class RuleModel:
@@ -337,10 +330,8 @@ class RuleModel:
             field2 = self.conditions.get("field2")
 
             if field1 and field2:
-                return (
-                    context.get("counts", {}).get(field1, 0) > 0 and
-                    context.get("counts", {}).get(field2, 0) > 0
-                )
+                return (context.get("counts", {}).get(field1, 0) > 0
+                        and context.get("counts", {}).get(field2, 0) > 0)
 
         elif self.type == "sequence":
             # 序列規則：檢查特定序列是否存在
@@ -363,10 +354,11 @@ class RuleModel:
             return False
 
         for i in range(fields_len - seq_len + 1):
-            if fields[i:i+seq_len] == seq:
+            if fields[i:i + seq_len] == seq:
                 return True
 
         return False
+
 
 @dataclass
 class UserProfile:
@@ -439,11 +431,14 @@ class UserProfile:
         import re
         return bool(re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email))
 
+
 # 工具函數
+
 
 def convert_to_model(data: Dict[str, Any], model_class) -> Any:
     """轉換字典為模型實例"""
     return model_class.from_dict(data)
+
 
 def convert_to_dict(model) -> Dict[str, Any]:
     """轉換模型實例為字典"""
@@ -451,55 +446,57 @@ def convert_to_dict(model) -> Dict[str, Any]:
         return model.to_dict()
     return asdict(model)
 
+
 def validate_model(model) -> Tuple[bool, List[str]]:
     """驗證模型是否有效"""
     if hasattr(model, 'validate'):
         return model.validate()
     return True, []
 
-# 測試用程式
-if __name__ == "__main__":
-    # 測試磁場模型
-    field = MagneticField(
-        name="天醫",
-        count=2,
-        keywords=["主大才", "天生聰穎", "文筆好"],
-        strengths="賺錢有如神助、諸事順遂、外型氣質俱佳",
-        weaknesses="極度善良，偶爾會被蒙騙",
-        financial_strategy="智慧投資，行善積福，防範詐騙",
-        relationship_advice="關懷對方，共同成長，給予情感支持"
-    )
-    print("磁場模型:", field)
-    print("轉換為字典:", field.to_dict())
-    print()
 
-    # 測試輸入資料模型
-    input_data = InputData(
-        input_type="name",
-        value="測試姓名",
-        options={"digit_length": 4, "mix_mode": False}
-    )
-    print("輸入資料模型:", input_data)
-    print("驗證結果:", input_data.validate())
-    print()
+# # 測試用程式
+# if __name__ == "__main__":
+#     # 測試磁場模型
+#     field = MagneticField(
+#         name="天醫",
+#         count=2,
+#         keywords=["主大才", "天生聰穎", "文筆好"],
+#         strengths="賺錢有如神助、諸事順遂、外型氣質俱佳",
+#         weaknesses="極度善良，偶爾會被蒙騙",
+#         financial_strategy="智慧投資，行善積福，防範詐騙",
+#         relationship_advice="關懷對方，共同成長，給予情感支持"
+#     )
+#     print("磁場模型:", field)
+#     print("轉換為字典:", field.to_dict())
+#     print()
 
-    # 測試分析結果模型
-    result = AnalysisResult(
-        input_data=input_data,
-        raw_analysis="天醫 生氣 延年 五鬼",
-        counts={"天醫": 1, "生氣": 1, "延年": 1, "五鬼": 1},
-        adjusted_counts={"天醫": 1, "生氣": 1, "延年": 1},
-        adjust_log=["(五鬼-1)"],
-        recommendations=["1234", "5678", "9012"],
-        field_details={
-            "天醫": {
-                "count": 1,
-                "keywords": ["主大才", "天生聰穎", "文筆好"],
-                "strengths": "賺錢有如神助、諸事順遂、外型氣質俱佳",
-                "weaknesses": "極度善良，偶爾會被蒙騙"
-            }
-        }
-    )
-    print("分析結果摘要:", result.summary())
-    print("分析結果文本輸出:")
-    print(result.export_to_text())
+#     # 測試輸入資料模型
+#     input_data = InputData(
+#         input_type="name",
+#         value="測試姓名",
+#         options={"digit_length": 4, "mix_mode": False}
+#     )
+#     print("輸入資料模型:", input_data)
+#     print("驗證結果:", input_data.validate())
+#     print()
+
+#     # 測試分析結果模型
+#     result = AnalysisResult(
+#         input_data=input_data,
+#         raw_analysis="天醫 生氣 延年 五鬼",
+#         counts={"天醫": 1, "生氣": 1, "延年": 1, "五鬼": 1},
+#         adjusted_counts={"天醫": 1, "生氣": 1, "延年": 1},
+#         adjust_log=["(五鬼-1)"],
+#         recommendations=["1234", "5678", "9012"],
+#         field_details={
+#             "天醫": {
+#                 "count": 1,
+#                 "keywords": ["主大才", "天生聰穎", "文筆好"],
+#                 "strengths": "賺錢有如神助、諸事順遂、外型氣質俱佳",
+#                 "weaknesses": "極度善良，偶爾會被蒙騙"
+#             }
+#         }
+#     )
+#     print("分析結果摘要:", result.summary())
+#     print("分析結果文本輸出:")
+#     print(result.export_to_text())

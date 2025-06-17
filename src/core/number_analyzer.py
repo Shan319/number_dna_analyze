@@ -65,7 +65,8 @@ magnetic_fields = {
 }
 
 
-def analyze_magnetic_fields(input_list: list[str]):
+def analyze_magnetic_fields(
+        input_list: list[str]) -> tuple[dict[str, int], dict[str, int], list[str]]:
     """分析磁場並返回結果
 
     Parameters
@@ -87,7 +88,7 @@ def analyze_magnetic_fields(input_list: list[str]):
 
     # 進階規則處理
     adjusted_counts = dict(base_counts.copy())
-    adjust_log = []
+    adjust_log: list[str] = []
 
     # 使用 try-except 以防磁場名稱不在預定義列表中
     try:

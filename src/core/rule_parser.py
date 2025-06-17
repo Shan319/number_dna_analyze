@@ -10,11 +10,9 @@
 4. 提供規則查詢和應用機制
 """
 
-import json
 import logging
 import os
-from pathlib import Path
-from typing import Dict, List, Any, Tuple, Set, Optional
+from typing import Any
 
 from src.utils import main_service
 # 設定日誌記錄器
@@ -23,7 +21,7 @@ from src.utils import main_service
 class RuleParser:
     """規則解析與處理類"""
 
-    def __init__(self, rules_directory: str | None = None):
+    def __init__(self) -> None:
         """
         初始化規則解析器
 
@@ -33,39 +31,34 @@ class RuleParser:
         self.logger = main_service.log.get_logger("數字 DNA 分析器.RuleParser")
 
         # 設定規則目錄
-        if rules_directory is None:
-            base_dir = Path(__file__).parent.parent
-            self.rules_directory: str = os.path.join(base_dir, "resources", "rules")
-        else:
-            self.rules_directory = rules_directory
-
-        self.logger.info(f"初始化規則解析器，規則目錄: {self.rules_directory}")
+        self.logger.info(f"初始化規則解析器，規則目錄: {main_service.file_manager.resources_dir}")
 
         # 初始化規則存儲
-        self.base_rules = {}
-        self.field_rules = {}
-        self.magnetic_pairs = {}
-        self.magnetic_properties = {}
-        self.rule_cancellations = {}
+        self.base_rules: dict[str, Any] = {}
+        self.field_rules: dict[str, Any] = {}
+        self.magnetic_pairs: dict[str, Any] = {}
+        self.magnetic_properties: dict[str, Any] = {}
+        self.rule_cancellations: dict[str, Any] = {}
 
         # 載入規則
         self._load_rules()
 
     def _load_rules(self) -> None:
         """載入所有規則文件"""
+        file_manager = main_service.file_manager
         try:
             # 載入基本規則
-            base_rules_path = os.path.join(self.rules_directory, "base_rules.json")
+            base_rules_path = file_manager.get_base_rules_path()
             if os.path.exists(base_rules_path):
-                self.base_rules = self._load_json_file(base_rules_path)
+                self.base_rules = file_manager.load_from_json_file(base_rules_path)
                 self.logger.info("已載入基本數字能量規則")
             else:
                 self.logger.warning(f"基本規則檔案不存在: {base_rules_path}")
 
             # 載入磁場規則
-            field_rules_path = os.path.join(self.rules_directory, "field_rules.json")
+            field_rules_path = file_manager.get_field_rules_path()
             if os.path.exists(field_rules_path):
-                self.field_rules = self._load_json_file(field_rules_path)
+                self.field_rules = file_manager.load_from_json_file(field_rules_path)
                 self.logger.info("已載入八大磁場計算規則")
             else:
                 self.logger.warning(f"磁場規則檔案不存在: {field_rules_path}")
@@ -76,26 +69,6 @@ class RuleParser:
         except Exception as e:
             self.logger.error(f"載入規則失敗: {e}", exc_info=True)
             raise RuntimeError(f"無法載入規則檔案: {e}")
-
-    def _load_json_file(self, file_path: str) -> Dict:
-        """
-        載入JSON文件
-
-        Args:
-            file_path (str): JSON文件路徑
-
-        Returns:
-            Dict: 解析後的JSON數據
-        """
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except json.JSONDecodeError as e:
-            self.logger.error(f"JSON解析錯誤 ({file_path}): {e}")
-            raise
-        except Exception as e:
-            self.logger.error(f"載入文件失敗 ({file_path}): {e}")
-            raise
 
     def _parse_rules(self) -> None:
         """解析載入的規則數據"""
@@ -255,16 +228,16 @@ class RuleParser:
         """
         return self.pair_to_field.get(pair, "未知")
 
-    def get_all_magnetic_fields(self) -> List[str]:
+    def get_all_magnetic_fields(self) -> list[str]:
         """
         取得所有磁場名稱列表
 
         Returns:
-            List[str]: 磁場名稱列表
+            list[str]: 磁場名稱列表
         """
         return list(self.magnetic_pairs.keys())
 
-    def get_magnetic_properties(self, field_name: str) -> Dict:
+    def get_magnetic_properties(self, field_name: str) -> dict:
         """
         獲取指定磁場的屬性
 
@@ -272,20 +245,20 @@ class RuleParser:
             field_name (str): 磁場名稱
 
         Returns:
-            Dict: 磁場屬性字典
+            dict: 磁場屬性字典
         """
         return self.magnetic_properties.get(field_name, {})
 
-    def get_cancellation_rules(self) -> Dict:
+    def get_cancellation_rules(self) -> dict:
         """
         獲取規則抵消關係
 
         Returns:
-            Dict: 規則抵消關係字典
+            dict: 規則抵消關係字典
         """
         return self.rule_cancellations
 
-    def transform_numbers_to_fields(self, number_sequence: str) -> List[str]:
+    def transform_numbers_to_fields(self, number_sequence: str) -> list[str]:
         """
         將數字序列轉換為磁場序列
 
@@ -293,7 +266,7 @@ class RuleParser:
             number_sequence (str): 數字序列
 
         Returns:
-            List[str]: 磁場名稱列表
+            list[str]: 磁場名稱列表
         """
 
         # 實現數字轉換規則
@@ -348,15 +321,15 @@ class RuleParser:
 
         return fields
 
-    def apply_advanced_rules(self, fields: List[str]) -> Tuple[Dict[str, int], List[str]]:
+    def apply_advanced_rules(self, fields: list[str]) -> tuple[dict[str, int], list[str]]:
         """
         應用進階規則處理磁場序列
 
         Args:
-            fields (List[str]): 磁場名稱列表
+            fields (list[str]): 磁場名稱列表
 
         Returns:
-            Tuple[Dict[str, int], List[str]]: (調整後的計數字典, 調整日誌)
+            tuple[dict[str, int], list[str]]: (調整後的計數字典, 調整日誌)
         """
         from collections import Counter
 

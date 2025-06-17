@@ -41,31 +41,31 @@ class FileManager:
     def history_dir(self):
         return self._history_dir
 
-    def write_to_json(self, filepath: str, data: dict[str, Any]):
+    def dump_to_json_file(self, filepath: str, data: dict[str, Any]):
         with open(filepath, "w", encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
 
-    def read_from_json(self, filepath: str) -> Any:
+    def load_from_json_file(self, filepath: str) -> Any:
         with open(filepath, "r", encoding='utf-8') as f:
             data = json.load(f)
 
         return data
 
-    def write_to_str(self, filepath: str, data: str, encoding: str = "utf-8"):
+    def dump_to_plain_file(self, filepath: str, data: str, encoding: str = "utf-8"):
         with open(filepath, "w", encoding=encoding) as f:
             f.write(data)
 
-    def read_from_str(self, filepath: str, encoding: str = "utf-8") -> str:
+    def load_from_plain_file(self, filepath: str, encoding: str = "utf-8") -> str:
         with open(filepath, "r", encoding=encoding) as f:
             data = f.read()
 
         return data
 
-    def write_to_data(self, filepath: str, data: bytes):
+    def dump_to_data_file(self, filepath: str, data: bytes):
         with open(filepath, "wb") as f:
             f.write(data)
 
-    def read_from_data(self, filepath: str) -> bytes:
+    def load_from_data_file(self, filepath: str) -> bytes:
         with open(filepath, "rb") as f:
             data = f.read()
 
