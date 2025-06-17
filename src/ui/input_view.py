@@ -10,7 +10,7 @@ from src.utils.validators import validate_all
 from src.data.input_data import InputData, InputType
 from src.data.result_data import ResultData
 from src.ui.settings_module import SettingView
-from src.controller.analysis_controller import analyze
+from src.controller.analysis_controller import AnalyzeController
 
 
 class InputView:
@@ -79,6 +79,8 @@ class InputView:
                                                                                 column=2,
                                                                                 pady=5)
         tk.Button(frame, text="儲存設定", command=self.on_save_settings).grid(row=row, column=3, pady=5)
+
+        self.analyze_controller = AnalyzeController()
 
     def load_input_data(self, input_data: InputData):
         """依照 input_data 載入畫面上的值。
@@ -149,7 +151,7 @@ class InputView:
             return  # 停止執行，避免分析錯誤資料
 
         # 分析輸入資料
-        result_data = analyze(input_data)
+        result_data = self.analyze_controller.analyze(input_data)
         if result_data.errors:
             messagebox.showerror("輸入錯誤", "\n".join(errors))
             return  # 停止執行，避免分析錯誤資料

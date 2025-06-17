@@ -8,92 +8,200 @@
 """
 
 from collections import Counter
-from typing import Any
 
 # 從核心模組導入分析功能
 from src.utils import main_service
 from src.data.input_data import InputData, InputType, FixDigitsPosition
 from src.data.result_data import ResultData, FieldDetail
-from src.core.field_analyzer import analyze_input, analyze_name_strokes, analyze_mixed_input
-from src.core.number_analyzer import keyword_fields, magnetic_fields, analyze_magnetic_fields
+from src.core.field_analyzer import FieldAnalyzer
+from src.core.number_analyzer import NumberAnalyzer
 from src.core.recommendation_engine import generate_multiple_lucky_numbers
 
 
-def get_logger():
-    return main_service.log.get_logger("數字 DNA 分析器.AnalysisController")
+class AnalyzeController:
 
+    def __init__(self) -> None:
+        self.logger = main_service.log.get_logger("數字 DNA 分析器.AnalysisController")
 
-def analyze(input_data: InputData) -> ResultData:
-    """分析用戶輸入數據
+    def analyze(self, input_data: InputData) -> ResultData:
+        """分析用戶輸入數據
 
-    Parameters
-    ----------
-    input_data : InputData
-        輸入數據
+        Parameters
+        ----------
+        input_data : InputData
+            輸入數據
 
-    Returns
-    -------
-    ResultData
-        分析結果
-    """
-    logger = get_logger()
-    logger.info("開始分析用戶輸入數據")
+        Returns
+        -------
+        ResultData
+            分析結果
+        """
+        self.logger.info("開始分析用戶輸入數據")
+        field_analyzer = FieldAnalyzer()
+        number_analyzer = NumberAnalyzer()
 
-    errors: list[str] = []
+        errors: list[str] = []
 
-    input_type = input_data.input_type
-    input_value = input_data.input_value
-    result_data = ResultData(input_data=input_data,
-                             raw_analysis=None,
-                             counts={},
-                             adjusted_counts={},
-                             adjusted_log=[],
-                             recommendations=[],
-                             field_details={},
-                             errors=[])
-    try:
-        raw_analysis = None
+        input_type = input_data.input_type
+        input_value = input_data.input_value
+        result_data = ResultData(input_data=input_data)
+        try:
+            raw_analysis = None
 
-        if input_type == InputType.NAME:
-            raw_analysis = analyze_name_strokes(input_value)
-        elif input_type == InputType.ID:
-            raw_analysis = analyze_input(input_value, is_id=True)
-        elif input_type == InputType.BIRTH:
-            raw_analysis = analyze_input(input_value.replace("/", ""))
-        elif input_type == InputType.PHONE:
-            raw_analysis = analyze_input(input_value)
-        elif input_type == InputType.CUSTOM:
-            raw_analysis = analyze_mixed_input(input_value)
+            if input_type == InputType.NAME:
+                raw_analysis = field_analyzer.analyze_name_strokes(input_value)
+            elif input_type == InputType.ID:
+                raw_analysis = field_analyzer.analyze_input(input_value, is_id=True)
+            elif input_type == InputType.BIRTH:
+                raw_analysis = field_analyzer.analyze_input(input_value.replace("/", ""))
+            elif input_type == InputType.PHONE:
+                raw_analysis = field_analyzer.analyze_input(input_value)
+            elif input_type == InputType.CUSTOM:
+                raw_analysis = field_analyzer.analyze_mixed_input(input_value)
 
-        result_data.raw_analysis = raw_analysis
+            result_data.raw_analysis = raw_analysis
 
-        # 處理原始分析結果
-        if not raw_analysis:  # 檢查空結果
-            errors.append("分析結果為空，請檢查輸入數據")
+            # 處理原始分析結果
+            if not raw_analysis:  # 檢查空結果
+                errors.append("分析結果為空，請檢查輸入數據")
+                return result_data
+
+            magnetic_fields_list = raw_analysis.split()
+            # 使用 analyze_magnetic_fields 進行磁場分析
+            base_counts, adjusted_counts, adjust_log = number_analyzer.analyze_magnetic_fields(
+                magnetic_fields_list)
+            result_data.counts = base_counts
+            result_data.adjusted_counts = adjusted_counts
+            result_data.adjusted_log = adjust_log
+
+            # 生成推薦數字
+            recommendations = self.generate_full_lucky_numbers(adjusted_counts, input_data)
+            result_data.recommendations = recommendations
+
+            # 添加磁場詳細資訊
+            field_details = self.generate_field_details(adjusted_counts)
+            result_data.field_details = field_details
+
+            self.logger.info(f"分析完成: {result_data.input_data.input_type}")
             return result_data
 
-        magnetic_fields_list = raw_analysis.split()
-        # 使用 analyze_magnetic_fields 進行磁場分析
-        base_counts, adjusted_counts, adjust_log = analyze_magnetic_fields(magnetic_fields_list)
-        result_data.counts = base_counts
-        result_data.adjusted_counts = adjusted_counts
-        result_data.adjusted_log = adjust_log
+        except Exception as e:
+            self.logger.error(f"分析過程發生錯誤: {e}", exc_info=True)
+            errors.append(f"分析錯誤: {str(e)}")
+            return result_data
+
+    def generate_lucky_numbers(self,
+                               adjusted_counts: dict[str, int],
+                               length=4,
+                               count=5) -> list[str]:
+        """根據分析結果生成幸運數字
+
+        Parameters
+        ----------
+        adjusted_counts : dict[str, int]
+            調整後的磁場計數
+        length : int, optional
+            生成數字長度, by default 4
+        count : int, optional
+            生成數量, by default 5
+
+        Returns
+        -------
+        list[str]
+            幸運數字列表
+        """
+
+        try:
+            # 使用核心推薦引擎生成數字
+            lucky_numbers = generate_multiple_lucky_numbers(adjusted_counts, length, count)
+            return lucky_numbers
+        except Exception as e:
+            self.logger.error(f"生成幸運數字時發生錯誤: {e}", exc_info=True)
+            return []
+
+    def generate_full_lucky_numbers(self,
+                                    adjusted_counts: dict[str, int],
+                                    input_data: InputData,
+                                    count: int = 5) -> list[str]:
+        """產生完整幸運數字。
+
+        依照 input_data 中的要求插入固定英數字。
+
+        Parameters
+        ----------
+        adjusted_counts : dict[str, int]
+            調整後的磁場計數
+        input_data : InputData
+            輸入數據
+        count : int, optional
+            生成數量, by default 5
+
+        Returns
+        -------
+        list[str]
+            幸運數字。會依照 input_data 中的要求插入固定英數字。
+        """
+        digits_length = int(input_data.digits_length)
+        fixed_digits_position = input_data.fixed_digits_position
+        fixed_digits_value = input_data.fixed_digits_value
+        if fixed_digits_position != FixDigitsPosition.NONE:
+            digits_length = digits_length - len(fixed_digits_value)
 
         # 生成推薦數字
-        result_data.recommendations = generate_full_lucky_numbers(adjusted_counts, input_data)
+        recommendations = self.generate_lucky_numbers(adjusted_counts, digits_length, count)
 
-        # 添加磁場詳細資訊
-        field_details = generate_field_details(adjusted_counts)
-        for field_name, field_detail in field_details.items():
-            result_data.field_details[field_name] = FieldDetail(**field_detail)
+        # 插入固定英數字
+        if fixed_digits_position != FixDigitsPosition.NONE:
+            new_recommendations: list[str] = []
+            for recommendation in recommendations:
+                prev = ""
+                post = ""
+                if fixed_digits_position == FixDigitsPosition.BEGIN:
+                    post = recommendation
+                elif fixed_digits_position == FixDigitsPosition.CENTER:
+                    prev = recommendation[:(digits_length + 1) // 2]
+                    post = recommendation[(digits_length + 1) // 2:]
+                elif fixed_digits_position == FixDigitsPosition.END:
+                    prev = recommendation
+                new_recommendation = prev + fixed_digits_value + post
+                new_recommendations.append(new_recommendation)
 
-        logger.info(f"分析完成: {result_data.input_data.input_type}")
-        return result_data
+            recommendations = new_recommendations
 
-    except Exception as e:
-        logger.error(f"分析過程發生錯誤: {e}", exc_info=True)
-        errors.append(f"分析錯誤: {str(e)}")
-        return result_data
+        return recommendations
+
+    def generate_field_details(self, adjusted_counts: dict[str, int]) -> dict[str, FieldDetail]:
+        """生成各個磁場的詳細資訊
+
+        Parameters
+        ----------
+        adjusted_counts : dict[str, int]
+            調整後的磁場計數
+
+        Returns
+        -------
+        dict[str, Any]
+            包含磁場詳細資訊的字典
+        """
+        field_details: dict[str, FieldDetail] = {}
+
+        for field, count in adjusted_counts.items():
+            if count <= 0:
+                continue
+
+            field_detail = FieldDetail(count=count)
+            if field in NumberAnalyzer.MAGNETIC_FIELDS:
+                field_detail.keywords = list(NumberAnalyzer.KEYWORD_FIELDS[field])
+            if field in NumberAnalyzer.MAGNETIC_FIELDS:
+                magnetic_field = NumberAnalyzer.MAGNETIC_FIELDS[field]
+                field_detail.strengths = magnetic_field.get("strengths", "無資料")
+                field_detail.weaknesses = magnetic_field.get("weaknesses", "無資料")
+                field_detail.financial_strategy = magnetic_field.get("financial_strategy", "無資料")
+                field_detail.relationship_advice = magnetic_field.get("relationship_advice", "無資料")
+
+            field_details[field] = field_detail
+
+        return field_details
 
 
 def apply_advanced_rules(input_list):
@@ -183,98 +291,3 @@ def apply_advanced_rules(input_list):
     adjusted_counts = {k: v for k, v in adjusted_counts.items() if v > 0}
 
     return adjusted_counts, adjust_log
-
-
-def generate_field_details(adjusted_counts: dict[str, int]) -> dict[str, Any]:
-    """生成各個磁場的詳細資訊
-
-    Parameters
-    ----------
-    adjusted_counts : dict[str, int]
-        調整後的磁場計數
-
-    Returns
-    -------
-    dict[str, Any]
-        包含磁場詳細資訊的字典
-    """
-    field_details: dict[str, Any] = {}
-
-    for field, count in adjusted_counts.items():
-        if count <= 0:
-            continue
-
-        field_details[field] = {
-            "count": count,
-            "keywords": keyword_fields.get(field, {"未知關鍵字"}),
-            "strengths": magnetic_fields.get(field, {}).get("strengths", "無資料"),
-            "weaknesses": magnetic_fields.get(field, {}).get("weaknesses", "無資料"),
-            "financial_strategy": magnetic_fields.get(field, {}).get("financial_strategy", "無資料"),
-            "relationship_advice": magnetic_fields.get(field, {}).get("relationship_advice", "無資料")
-        }
-
-    return field_details
-
-
-def generate_lucky_numbers(adjusted_counts: dict[str, int], length=4, count=5) -> list[str]:
-    """根據分析結果生成幸運數字
-
-    Parameters
-    ----------
-    adjusted_counts : dict[str, int]
-        調整後的磁場計數
-    length : int, optional
-        生成數字長度, by default 4
-    count : int, optional
-        生成數量, by default 5
-
-    Returns
-    -------
-    list[str]
-        幸運數字列表
-    """
-    logger = get_logger()
-
-    try:
-        # 將adjust_counts轉換為generate_multiple_lucky_numbers函數所需的格式
-        magnetic_input = {k: v for k, v in adjusted_counts.items()}
-
-        # 使用核心推薦引擎生成數字
-        lucky_numbers = generate_multiple_lucky_numbers(magnetic_input, length, count)
-        return lucky_numbers
-    except Exception as e:
-        logger.error(f"生成幸運數字時發生錯誤: {e}", exc_info=True)
-        return []
-
-
-def generate_full_lucky_numbers(adjusted_counts: dict[str, int],
-                                input_data: InputData,
-                                count: int = 5) -> list[str]:
-    digits_length = int(input_data.digits_length)
-    fixed_digits_position = input_data.fixed_digits_position
-    fixed_digits_value = input_data.fixed_digits_value
-    if fixed_digits_position != FixDigitsPosition.NONE:
-        digits_length = digits_length - len(fixed_digits_value)
-
-    # 生成推薦數字
-    recommendations = generate_lucky_numbers(adjusted_counts, digits_length, count)
-
-    # 插入固定英數字
-    if fixed_digits_position != FixDigitsPosition.NONE:
-        new_recommendations: list[str] = []
-        for recommendation in recommendations:
-            prev = ""
-            post = ""
-            if fixed_digits_position == FixDigitsPosition.BEGIN:
-                post = recommendation
-            elif fixed_digits_position == FixDigitsPosition.CENTER:
-                prev = recommendation[:(digits_length + 1) // 2]
-                post = recommendation[(digits_length + 1) // 2:]
-            elif fixed_digits_position == FixDigitsPosition.END:
-                prev = recommendation
-            new_recommendation = prev + fixed_digits_value + post
-            new_recommendations.append(new_recommendation)
-
-        recommendations = new_recommendations
-
-    return recommendations

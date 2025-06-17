@@ -12,7 +12,7 @@ from src.config.main_config import get_main_config
 from src.utils.file_manager import FileManager
 from src.utils.cryptography import AESEncryptionFernet
 from src.utils.log_provider.log_provider_interface import Level
-from src.utils.log_provider.log_provider_impl import LogProvideImpl
+from src.utils.log_provider.log_provider_real_impl import LogProviderRealImpl
 from src.utils import main_service
 from src.ui.main_window import MainView
 
@@ -27,9 +27,9 @@ def main():
     main_service.file_manager = file_manager
 
     # Prepare Providers - Log
-    main_service.log = LogProvideImpl(file_manager.get_log_path())
-    main_service.log.set_level(log_level.value)
-    logger = main_service.log.get_logger("數字 DNA 分析器")
+    main_service.log = LogProviderRealImpl(file_manager.log_dir, None, "數字 DNA 分析器")
+    main_service.log.set_level(main_config.log_level)
+    logger = main_service.log.get_logger()
     logger.info("啟動數字 DNA 分析器")
 
     # Prepare Providers - Cryptography

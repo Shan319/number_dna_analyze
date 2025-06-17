@@ -9,22 +9,22 @@ from src.utils import main_service
 
 class FieldDetail(BaseModel):
     count: int
-    keywords: list[str]
-    strengths: str
-    weaknesses: str
-    financial_strategy: str
-    relationship_advice: str
+    keywords: list[str] = ["未知關鍵字"]
+    strengths: str = "無資料"
+    weaknesses: str = "無資料"
+    financial_strategy: str = "無資料"
+    relationship_advice: str = "無資料"
 
 
 class ResultData(BaseModel):
     input_data: InputData
-    raw_analysis: str | None
-    counts: dict[str, int]
-    adjusted_counts: dict[str, int]
-    adjusted_log: list[str]
-    recommendations: list[str]
-    field_details: dict[str, FieldDetail]
-    errors: list[str]
+    raw_analysis: str | None = None
+    counts: dict[str, int] = {}
+    adjusted_counts: dict[str, int] = {}
+    adjusted_log: list[str] = []
+    recommendations: list[str] = []
+    field_details: dict[str, FieldDetail] = {}
+    errors: list[str] = []
 
     def write_history(self, date: datetime | None = None):
         if date is None:

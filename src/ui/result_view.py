@@ -7,9 +7,9 @@ from tkinter import ttk, messagebox, simpledialog
 from src.utils import main_service
 from src.data.result_data import ResultData, FieldDetail
 from src.ui.display_module import show_field_visualization
-from src.controller.analysis_controller import generate_full_lucky_numbers
-from src.core.field_analyzer import analyze_input
-from src.core.number_analyzer import keyword_fields
+from src.controller.analysis_controller import AnalyzeController
+from src.core.field_analyzer import FieldAnalyzer
+from src.core.number_analyzer import NumberAnalyzer
 
 
 class ResultView:
@@ -42,6 +42,7 @@ class ResultView:
         self.details_tab: ttk.Frame | None = None
         self.detail_tree_view: ttk.Treeview | None = None
 
+        self.analyze_controller = AnalyzeController()
         self.update_display()
 
     def update_display(self):
@@ -267,6 +268,7 @@ class ResultView:
         popup = tk.Toplevel()
         popup.title(f"幸運數字詳情: {number_text}")
         popup.geometry("400x300")
+        field_analyzer = FieldAnalyzer()
 
         # 數字顯示
         tk.Label(popup, text=number_text, font=("Courier", 24, "bold")).pack(pady=(20, 10))
@@ -280,13 +282,13 @@ class ResultView:
         digit_frame.pack(fill="x", padx=20, pady=5)
 
         # 分析幸運數字的磁場組合
-        result = analyze_input(number_text)
+        result = field_analyzer.analyze_input(number_text)
         tk.Label(digit_frame, text=f"磁場組合：{result} ", anchor="w").pack(anchor="w")
 
         result_key = result.split()
         base_counts = Counter(result_key)
         for field, count in base_counts.items():
-            keywords = "、".join(keyword_fields.get(field, []))  # 取得關鍵字集合並轉成字串
+            keywords = "、".join(NumberAnalyzer.KEYWORD_FIELDS.get(field, []))  # 取得關鍵字集合並轉成字串
             tk.Label(digit_frame, text=f"{field}：{keywords} ", anchor="w").pack(anchor="w")
 
         # [TODO] 這裡應該調用數字分析引擎的函數來分析數字，這裡只是簡單示例
@@ -323,8 +325,8 @@ class ResultView:
         adjusted_counts = self.result_data.adjusted_counts
 
         # 生成新的幸運數字
-        new_numbers = generate_full_lucky_numbers(adjusted_counts, self.result_data.input_data,
-                                                  count)
+        new_numbers = self.analyze_controller.generate_full_lucky_numbers(
+            adjusted_counts, self.result_data.input_data, count)
         if new_numbers:
             # 更新結果數據
             self.result_data.recommendations = new_numbers
